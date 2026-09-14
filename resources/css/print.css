@@ -1,0 +1,87 @@
+/* ============================= Print layout ============================= */
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: #fff !important;
+        color: #000 !important;
+        font-size: 12px;
+    }
+
+    .print-page {
+        padding: 16px;
+        max-width: 100%;
+    }
+
+    .print-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 3px solid #0f172a;
+        padding-bottom: 12px;
+        margin-bottom: 16px;
+    }
+
+    .print-header .school-name {
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+
+    .print-header .school-sub {
+        color: #475569;
+        font-size: 11px;
+    }
+
+    .print-title {
+        font-size: 18px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .print-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .print-table th,
+    .print-table td {
+        border: 1px solid #cbd5e1;
+        padding: 6px 8px;
+        text-align: left;
+    }
+
+    .print-table th {
+        background: #f1f5f9;
+        font-weight: 700;
+    }
+
+    .print-signatures {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 48px;
+    }
+
+    .print-signature {
+        text-align: center;
+        width: 220px;
+        font-size: 12px;
+    }
+
+    .print-signature .line {
+        border-top: 1.5px solid #0f172a;
+        margin-bottom: 6px;
+    }
+
+    @page {
+        size: A4;
+        margin: 16mm;
+    }
+}
