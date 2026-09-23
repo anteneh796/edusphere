@@ -13,6 +13,27 @@ class ReportCardComment extends Model
 {
     use HasFactory, HasUuid;
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $comment): void {
+            if ($comment->reportCard?->isLocked()) {
+                throw new \RuntimeException('Published report card comments are immutable.');
+            }
+        });
+
+        static::updating(function (self $comment): void {
+            if ($comment->reportCard?->isLocked()) {
+                throw new \RuntimeException('Published report card comments are immutable.');
+            }
+        });
+
+        static::deleting(function (self $comment): void {
+            if ($comment->reportCard?->isLocked()) {
+                throw new \RuntimeException('Published report card comments cannot be deleted.');
+            }
+        });
+    }
+
     protected $fillable = [
         'report_card_id',
         'type',
