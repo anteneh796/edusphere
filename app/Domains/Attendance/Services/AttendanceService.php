@@ -575,10 +575,6 @@ class AttendanceService
         return DB::transaction(function () use ($record, $status, $reason, $requestedById) {
             $record = AttendanceRecord::query()->lockForUpdate()->findOrFail($record->getKey());
 
-            if ($record->session?->isLocked()) {
-                throw new \RuntimeException('Locked attendance sessions require an authorized unlock before correction.');
-            }
-
             $current = $record->status instanceof AttendanceStatus ? $record->status->value : $record->status;
             $requested = $status instanceof AttendanceStatus ? $status->value : $status;
             $approvalRequired = Setting::bool('correction_approval_required', true);
@@ -624,10 +620,6 @@ class AttendanceService
             $record = $correction->record;
 
             if ($correction->isPending() && $approve && $record !== null) {
-                if ($record->session?->isLocked()) {
-                    throw new \RuntimeException('Locked attendance sessions cannot be corrected.');
-                }
-
                 $record->update([
                     'status' => $correction->requested_status instanceof AttendanceStatus
                         ? $correction->requested_status->value
