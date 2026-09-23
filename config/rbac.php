@@ -30,7 +30,6 @@ return [
             'notifications.view',
             'settings.view', 'settings.edit',
             'audit.view',
-            'finance.view', 'finance.create', 'finance.edit', 'finance.delete', 'finance.export',
             'reports.view', 'reports.export',
             'parent_services.view', 'parent_services.process',
             'admissions.view', 'admissions.create', 'admissions.edit', 'admissions.delete', 'admissions.approve', 'admissions.enroll', 'admissions.verify', 'admissions.capacity',
@@ -50,7 +49,6 @@ return [
             'staff.view', 'staff.create', 'staff.edit',
             'approvals.view', 'approvals.create', 'approvals.approve',
             'notifications.view',
-            'finance.view',
             'reports.view', 'reports.export',
             'settings.view',
             'parent_services.view', 'parent_services.process',
@@ -72,7 +70,6 @@ return [
             'approvals.view', 'approvals.create', 'approvals.approve',
             'notifications.view',
             'audit.view',
-            'finance.view',
             'reports.view', 'reports.export',
             'parent_services.view', 'parent_services.process',
             'admissions.view', 'admissions.create', 'admissions.edit', 'admissions.approve', 'admissions.enroll', 'admissions.verify', 'admissions.capacity',
@@ -114,14 +111,6 @@ return [
             'hr.view',
         ],
 
-        'finance_officer' => [
-            'dashboard.view',
-            'students.view',
-            'notifications.view',
-            'finance.view', 'finance.create', 'finance.edit', 'finance.delete', 'finance.export',
-            'reports.view', 'reports.export',
-            'admissions.view',
-        ],
 
         'hr_officer' => [
             'dashboard.view',
@@ -168,7 +157,6 @@ return [
         'parent' => [
             'dashboard.view',
             'exams.view',
-            'finance.view',
         ],
     ],
 
@@ -178,7 +166,6 @@ return [
         'principal' => 'Principal',
         'vice_principal' => 'Vice Principal',
         'registrar' => 'Registrar',
-        'finance_officer' => 'Finance Officer',
         'hr_officer' => 'HR Officer',
         'reception' => 'Reception',
         'teacher' => 'Teacher',
@@ -197,7 +184,6 @@ return [
         'school_admin' => 30,
         'vice_principal' => 30,
         'registrar' => 30,
-        'finance_officer' => 20,
         'hr_officer' => 30,
         'reception' => 45,
         'teacher' => 45,
