@@ -80,37 +80,41 @@ class StudentService
 
     public function create(array $data): Student
     {
-        $class = ClassRoom::with('gradeLevel')->findOrFail($data['class_room_id']);
-        $year = $this->currentYear();
-        $roll = $this->nextRollNumber($class, $year);
-        $guardianData = $data['guardian'] ?? null;
-        unset($data['guardian']);
+        return DB::transaction(function () use ($data) {
+            $class = ClassRoom::with('gradeLevel')
+                ->lockForUpdate()
+                ->findOrFail($data['class_room_id']);
 
-        $photo = $data['photo'] ?? null;
-        unset($data['photo']);
+            $year = $this->currentYear();
+            $roll = $this->nextRollNumber($class, $year);
+            $guardianData = $data['guardian'] ?? null;
+            unset($data['guardian']);
 
-        $student = Student::create([
-            ...$data,
-            'student_number' => $this->buildStudentNumber($year, $class, $roll),
-            'grade_level_id' => $class->grade_level_id,
-            'class_room_id' => $class->getKey(),
-            'academic_year_id' => $year->getKey(),
-            'status' => StudentStatus::New->value,
-            'photo_path' => $photo ? $photo->store('student-photos', 'public') : null,
-        ]);
+            $photo = $data['photo'] ?? null;
+            unset($data['photo']);
 
-        $guardian = $this->createGuardian($guardianData, $student);
+            $student = Student::create([
+                ...$data,
+                'student_number' => $this->buildStudentNumber($year, $class, $roll),
+                'grade_level_id' => $class->grade_level_id,
+                'class_room_id' => $class->getKey(),
+                'academic_year_id' => $year->getKey(),
+                'status' => StudentStatus::New->value,
+                'photo_path' => $photo ? $photo->store('student-photos', 'public') : null,
+            ]);
 
-        $this->createEnrollment($student, $class, $data['enrollment_date'] ?? now()->toDateString(), $year, $roll);
+            $this->createGuardian($guardianData, $student);
+            $this->createEnrollment($student, $class, $data['enrollment_date'] ?? now()->toDateString(), $year, $roll);
 
-        $this->logTimeline(
-            $student,
-            StudentTimelineType::Enrolled,
-            sprintf('Student registered and placed in %s.', $class->name),
-            ['class_room_id' => $class->getKey(), 'roll_number' => $roll]
-        );
+            $this->logTimeline(
+                $student,
+                StudentTimelineType::Enrolled,
+                sprintf('Student registered and placed in %s.', $class->name),
+                ['class_room_id' => $class->getKey(), 'roll_number' => $roll]
+            );
 
-        return $student->load(['gradeLevel', 'classRoom', 'primaryGuardian', 'academicYear'])->refresh();
+            return $student->load(['gradeLevel', 'classRoom', 'primaryGuardian', 'academicYear'])->refresh();
+        });
     }
 
     public function update(Student $student, array $data): Student
