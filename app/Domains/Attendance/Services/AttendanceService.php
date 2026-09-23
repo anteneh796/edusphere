@@ -334,24 +334,20 @@ class AttendanceService
 
     public function monthlyReport(Carbon $from, Carbon $to, ?string $gradeId = null, ?string $classId = null): Collection
     {
-        $rangeFilter = function ($query) use ($from, $to, $gradeId, $classId) {
-            $query
-                ->whereHas('session', fn ($q) => $q->whereBetween('date', [$from, $to->endOfDay()])
-                ->when($classId, fn ($builder, $id) => $builder->whereHas('session', fn ($q) => $q->where('class_room_id', $id)))
-                ->when($gradeId, fn ($builder, $id) => $builder->whereHas(
-                    'session',
-                    fn ($q) => $q->whereHas('classRoom', fn ($cq) => $cq->where('grade_level_id', $id))
-                ));
-        };
+        $range = [$from->toDateString(), $to->toDateString()];
 
         return Student::query()
             ->with('classRoom.gradeLevel')
-            ->whereHas('attendanceRecords', $rangeFilter)
+            ->whereHas('attendanceRecords', fn ($query) => $query->whereHas('session', fn ($q) => $q
+                ->whereBetween('date', $range)
+                ->when($classId, fn ($builder, $id) => $builder->where('class_room_id', $id))
+                ->when($gradeId, fn ($builder, $id) => $builder->whereHas('classRoom', fn ($classQuery) => $classQuery->where('grade_level_id', $id)))
+            ))
             ->withCount([
-                'attendanceRecords as present_count' => fn ($query) => $query->where('status', AttendanceStatus::Present->value)->whereHas('session', fn ($q) => $q->whereBetween('date', [$from, $to->endOfDay()]),
-                'attendanceRecords as absent_count' => fn ($query) => $query->where('status', AttendanceStatus::Absent->value)->whereHas('session', fn ($q) => $q->whereBetween('date', [$from, $to->endOfDay()]),
-                'attendanceRecords as late_count' => fn ($query) => $query->where('status', AttendanceStatus::Late->value)->whereHas('session', fn ($q) => $q->whereBetween('date', [$from, $to->endOfDay()]),
-                'attendanceRecords as excused_count' => fn ($query) => $query->where('status', AttendanceStatus::Excused->value)->whereHas('session', fn ($q) => $q->whereBetween('date', [$from, $to->endOfDay()]),
+                'attendanceRecords as present_count' => fn ($query) => $query->where('status', AttendanceStatus::Present->value)->whereHas('session', fn ($q) => $q->whereBetween('date', $range)),
+                'attendanceRecords as absent_count' => fn ($query) => $query->where('status', AttendanceStatus::Absent->value)->whereHas('session', fn ($q) => $q->whereBetween('date', $range)),
+                'attendanceRecords as late_count' => fn ($query) => $query->where('status', AttendanceStatus::Late->value)->whereHas('session', fn ($q) => $q->whereBetween('date', $range)),
+                'attendanceRecords as excused_count' => fn ($query) => $query->where('status', AttendanceStatus::Excused->value)->whereHas('session', fn ($q) => $q->whereBetween('date', $range)),
             ])
             ->orderBy('student_number')
             ->get()
@@ -359,22 +355,16 @@ class AttendanceService
                 $total = $student->present_count + $student->absent_count + $student->late_count + $student->excused_count;
 
                 return [
-                    'student' => $student,
-                    'total' => $total,
-                    'present' => $student->present_count,
-                    'absent' => $student->absent_count,
-                    'late' => $student->late_count,
-                    'excused' => $student->excused_count,
+                    'student' => $student, 'total' => $total,
+                    'present' => $student->present_count, 'absent' => $student->absent_count,
+                    'late' => $student->late_count, 'excused' => $student->excused_count,
                     'rate' => $this->rateFor([
-                        'present' => $student->present_count,
-                        'absent' => $student->absent_count,
-                        'late' => $student->late_count,
-                        'excused' => $student->excused_count,
+                        'present' => $student->present_count, 'absent' => $student->absent_count,
+                        'late' => $student->late_count, 'excused' => $student->excused_count,
                     ]),
                 ];
             });
     }
-
     public function studentReport(Student $student, ?string $from = null, ?string $to = null): array
     {
         $records = $student->attendanceRecords()
@@ -398,18 +388,18 @@ class AttendanceService
 
     public function statusReport(AttendanceStatus $status, Carbon $from, Carbon $to, ?string $gradeId = null, ?string $classId = null): Collection
     {
+        $range = [$from->toDateString(), $to->toDateString()];
+
         return AttendanceRecord::with(['student', 'session.classRoom.gradeLevel'])
             ->where('status', $status->value)
-            ->whereHas('session', fn ($q) => $q->whereBetween('date', [$from, $to->endOfDay()])
-            ->when($classId, fn ($builder, $id) => $builder->whereHas('session', fn ($q) => $q->where('class_room_id', $id)))
-            ->when($gradeId, fn ($builder, $id) => $builder->whereHas(
-                'session',
-                fn ($q) => $q->whereHas('classRoom', fn ($cq) => $cq->where('grade_level_id', $id))
-            ))
+            ->whereHas('session', fn ($q) => $q
+                ->whereBetween('date', $range)
+                ->when($classId, fn ($builder, $id) => $builder->where('class_room_id', $id))
+                ->when($gradeId, fn ($builder, $id) => $builder->whereHas('classRoom', fn ($classQuery) => $classQuery->where('grade_level_id', $id)))
+            )
             ->orderByDesc('created_at')
             ->get();
     }
-
     public function trendReport(Carbon $from, Carbon $to, ?string $gradeId = null): Collection
     {
         $query = AttendanceSession::with('records')
@@ -535,33 +525,31 @@ class AttendanceService
 
     public function lateReport(Carbon $from, Carbon $to, ?string $gradeId = null, ?string $classId = null): Collection
     {
-        return AttendanceRecord::with(['student.classRoom.gradeLevel'])
+        $range = [$from->toDateString(), $to->toDateString()];
+
+        return AttendanceRecord::with(['student.classRoom.gradeLevel', 'session'])
             ->where('status', AttendanceStatus::Late->value)
-            ->whereHas('session', fn ($q) => $q->whereBetween('date', [$from, $to->endOfDay()])
-            ->when($classId, fn ($builder, $id) => $builder->whereHas('session', fn ($q) => $q->where('class_room_id', $id)))
-            ->when($gradeId, fn ($builder, $id) => $builder->whereHas(
-                'session',
-                fn ($q) => $q->whereHas('classRoom', fn ($cq) => $cq->where('grade_level_id', $id))
-            ))
+            ->whereHas('session', fn ($q) => $q
+                ->whereBetween('date', $range)
+                ->when($classId, fn ($builder, $id) => $builder->where('class_room_id', $id))
+                ->when($gradeId, fn ($builder, $id) => $builder->whereHas('classRoom', fn ($classQuery) => $classQuery->where('grade_level_id', $id)))
+            )
             ->orderByDesc('created_at')
             ->get()
             ->groupBy('student_id')
-            ->map(function (Collection $rows, string $studentId) {
+            ->map(function (Collection $rows) {
                 $first = $rows->first();
 
                 return [
                     'student' => $first->student,
                     'late_count' => $rows->count(),
-                    'last_late' => $rows->first()?->session?->date,
+                    'last_late' => $first?->session?->date,
                     'class' => $first->student->classRoom,
                 ];
             })
             ->sortByDesc('late_count')
             ->values();
     }
-
-    /* ------------------------------ Corrections -------------------------------- */
-
     public function pendingCorrections(): Collection
     {
         return AttendanceCorrection::with(['record.student', 'record.session.classRoom.gradeLevel', 'requestedBy'])
@@ -643,17 +631,17 @@ class AttendanceService
 
     public function studentAlerts(int $absentThreshold = 3, int $lateThreshold = 5): Collection
     {
-        $since = Carbon::now()->startOfMonth();
+        $since = Carbon::now()->startOfMonth()->toDateString();
 
         $students = Student::with('classRoom.gradeLevel')
-            ->whereHas('attendanceRecords', fn ($query) => $query->where('created_at', '>=', $since))
+            ->whereHas('attendanceRecords', fn ($query) => $query->whereHas('session', fn ($q) => $q->whereDate('date', '>=', $since)))
             ->withCount([
                 'attendanceRecords as absent_count' => fn ($query) => $query
                     ->where('status', AttendanceStatus::Absent->value)
-                    ->where('created_at', '>=', $since),
+                    ->whereHas('session', fn ($q) => $q->whereDate('date', '>=', $since)),
                 'attendanceRecords as late_count' => fn ($query) => $query
                     ->where('status', AttendanceStatus::Late->value)
-                    ->where('created_at', '>=', $since),
+                    ->whereHas('session', fn ($q) => $q->whereDate('date', '>=', $since)),
             ])
             ->get()
             ->filter(fn (Student $student) => $student->absent_count >= $absentThreshold || $student->late_count >= $lateThreshold)
@@ -662,12 +650,8 @@ class AttendanceService
 
         return $students->map(function (Student $student) use ($absentThreshold, $lateThreshold) {
             $flag = collect();
-            if ($student->absent_count >= $absentThreshold) {
-                $flag->push('Absenteeism');
-            }
-            if ($student->late_count >= $lateThreshold) {
-                $flag->push('Chronic lateness');
-            }
+            if ($student->absent_count >= $absentThreshold) $flag->push('Absenteeism');
+            if ($student->late_count >= $lateThreshold) $flag->push('Chronic lateness');
 
             return [
                 'student' => $student,
@@ -677,7 +661,6 @@ class AttendanceService
             ];
         });
     }
-
     private function resolveStudent(array $row): ?Student
     {
         if (! empty($row['student_id'])) {
