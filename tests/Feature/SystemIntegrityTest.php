@@ -30,6 +30,36 @@ class SystemIntegrityTest extends TestCase
         }
     }
 
+    public function test_route_security_references_exist_in_rbac_configuration(): void
+    {
+        $routeSource = file_get_contents(base_path('routes/web.php'));
+
+        preg_match_all('/permission:([a-z0-9_.-]+)/', $routeSource, $permissionMatches);
+        preg_match_all('/role:([a-z0-9_-]+)/', $routeSource, $roleMatches);
+
+        $declaredPermissions = collect(config('rbac.roles', []))
+            ->flatten()
+            ->unique()
+            ->values();
+
+        foreach (array_unique($permissionMatches[1] ?? []) as $permission) {
+            $this->assertTrue(
+                $declaredPermissions->contains($permission),
+                "Route references undeclared permission [{$permission}]."
+            );
+        }
+
+        $declaredRoles = array_keys(config('rbac.role_labels', []));
+
+        foreach (array_unique($roleMatches[1] ?? []) as $role) {
+            $this->assertContains(
+                $role,
+                $declaredRoles,
+                "Route references undeclared role [{$role}]."
+            );
+        }
+    }
+
     public function test_rbac_configuration_contains_only_declared_roles_and_permissions(): void
     {
         $roles = config('rbac.roles', []);
