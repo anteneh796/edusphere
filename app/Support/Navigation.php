@@ -59,12 +59,6 @@ class Navigation
                 ],
             ],
             [
-                'title' => __('Finance'),
-                'items' => [
-                    ['label' => __('Payments'), 'route' => 'finance.payments.index', 'icon' => 'banknote', 'enabled' => true, 'permissions' => ['finance.create']],
-                    ['label' => __('Invoices'), 'route' => 'finance.invoices.index', 'icon' => 'receipt', 'enabled' => true, 'permissions' => ['finance.create']],
-                    ['label' => __('Fee Structures'), 'route' => 'finance.fees.index', 'icon' => 'wallet', 'enabled' => false, 'permissions' => ['finance.view']],
-                ],
             ],
             [
                 'title' => __('Human Resources'),
@@ -194,7 +188,6 @@ class Navigation
                     ['label' => __('Announcements'), 'route' => 'cms.parent.announcements', 'icon' => 'newspaper', 'enabled' => true],
                     ['label' => __('Messages'), 'route' => 'cms.parent.messages', 'icon' => 'mail', 'enabled' => true],
                     ['label' => __('Meetings'), 'route' => 'cms.parent.meetings', 'icon' => 'calendar', 'enabled' => true],
-                    ['label' => __('Fees'), 'route' => 'cms.parent.billing', 'icon' => 'receipt', 'enabled' => true],
                     ['label' => __('Documents'), 'route' => 'cms.parent.documents', 'icon' => 'folder', 'enabled' => true],
                     ['label' => __('Requests'), 'route' => 'cms.parent.requests', 'icon' => 'inbox', 'enabled' => true],
                     ['label' => __('Notifications'), 'route' => 'cms.parent.notifications', 'icon' => 'bell', 'enabled' => true],
