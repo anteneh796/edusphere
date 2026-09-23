@@ -21,6 +21,7 @@ use App\Support\Enums\AdmissionStatus;
 use App\Support\Enums\RoleName;
 use App\Support\Enums\StudentStatus;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class AdmissionService
