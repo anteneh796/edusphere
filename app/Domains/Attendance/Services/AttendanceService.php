@@ -572,60 +572,79 @@ class AttendanceService
 
     public function requestCorrection(AttendanceRecord $record, string $status, string $reason, string $requestedById): AttendanceCorrection
     {
-        $current = $record->status instanceof AttendanceStatus ? $record->status->value : $record->status;
-        $requested = $status instanceof AttendanceStatus ? $status->value : $status;
+        return DB::transaction(function () use ($record, $status, $reason, $requestedById) {
+            $record = AttendanceRecord::query()->lockForUpdate()->findOrFail($record->getKey());
 
-        $approvalRequired = Setting::bool('correction_approval_required', true);
+            if ($record->session?->isLocked()) {
+                throw new \RuntimeException('Locked attendance sessions require an authorized unlock before correction.');
+            }
 
-        if (! $approvalRequired) {
-            $record->update(['status' => $requested]);
+            $current = $record->status instanceof AttendanceStatus ? $record->status->value : $record->status;
+            $requested = $status instanceof AttendanceStatus ? $status->value : $status;
+            $approvalRequired = Setting::bool('correction_approval_required', true);
+
+            if (! $approvalRequired) {
+                $record->update(['status' => $requested]);
+
+                return AttendanceCorrection::create([
+                    'attendance_record_id' => $record->getKey(),
+                    'requested_by_id' => $requestedById,
+                    'requested_status' => $requested,
+                    'old_status' => $current,
+                    'new_status' => $requested,
+                    'status' => AttendanceCorrectionStatus::Approved->value,
+                    'reviewed_by_id' => $requestedById,
+                    'reviewer_note' => 'Auto-approved: manual approval is not required.',
+                    'reason' => $reason,
+                    'submitted_at' => now(),
+                    'reviewed_at' => now(),
+                ]);
+            }
 
             return AttendanceCorrection::create([
                 'attendance_record_id' => $record->getKey(),
                 'requested_by_id' => $requestedById,
                 'requested_status' => $requested,
                 'old_status' => $current,
-                'new_status' => $requested,
-                'status' => AttendanceCorrectionStatus::Approved->value,
-                'reviewed_by_id' => $requestedById,
-                'reviewer_note' => 'Auto-approved: manual approval is not required.',
+                'status' => AttendanceCorrectionStatus::Pending->value,
                 'reason' => $reason,
                 'submitted_at' => now(),
-                'reviewed_at' => now(),
             ]);
-        }
-
-        return AttendanceCorrection::create([
-            'attendance_record_id' => $record->getKey(),
-            'requested_by_id' => $requestedById,
-            'requested_status' => $requested,
-            'old_status' => $current,
-            'status' => AttendanceCorrectionStatus::Pending->value,
-            'reason' => $reason,
-            'submitted_at' => now(),
-        ]);
+        });
     }
 
     public function reviewCorrection(AttendanceCorrection $correction, bool $approve, string $reviewerId, ?string $note = null): void
     {
-        $record = $correction->record;
+        DB::transaction(function () use ($correction, $approve, $reviewerId, $note) {
+            $correction = AttendanceCorrection::query()
+                ->with('record.session')
+                ->lockForUpdate()
+                ->findOrFail($correction->getKey());
 
-        if ($correction->isPending() && $approve && $record !== null) {
-            $record->update([
-                'status' => $correction->requested_status instanceof AttendanceStatus
-                    ? $correction->requested_status->value
-                    : $correction->requested_status,
+            $record = $correction->record;
+
+            if ($correction->isPending() && $approve && $record !== null) {
+                if ($record->session?->isLocked()) {
+                    throw new \RuntimeException('Locked attendance sessions cannot be corrected.');
+                }
+
+                $record->update([
+                    'status' => $correction->requested_status instanceof AttendanceStatus
+                        ? $correction->requested_status->value
+                        : $correction->requested_status,
+                ]);
+            }
+
+            $correction->update([
+                'status' => $approve ? AttendanceCorrectionStatus::Approved->value : AttendanceCorrectionStatus::Rejected->value,
+                'reviewed_by_id' => $reviewerId,
+                'reviewer_note' => $note ?: null,
+                'new_status' => $approve ? $correction->requested_status->value : $correction->old_status,
+                'reviewed_at' => now(),
             ]);
-        }
-
-        $correction->update([
-            'status' => $approve ? AttendanceCorrectionStatus::Approved->value : AttendanceCorrectionStatus::Rejected->value,
-            'reviewed_by_id' => $reviewerId,
-            'reviewer_note' => $note ?: null,
-            'new_status' => $approve ? $correction->requested_status->value : $correction->old_status,
-            'reviewed_at' => now(),
-        ]);
+        });
     }
+
 
     /* --------------------------------- Alerts ---------------------------------- */
 
