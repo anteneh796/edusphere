@@ -73,20 +73,24 @@ class AdmissionService
 
     public function createApplication(array $data, ?Inquiry $sourceInquiry = null, string $status = AdmissionStatus::Draft->value): AdmissionApplication
     {
-        $guardians = $data['guardians'] ?? [];
-        unset($data['guardians'], $data['source_inquiry_id']);
+        $application = DB::transaction(function () use ($data, $sourceInquiry, $status) {
+            $guardians = $data['guardians'] ?? [];
+            unset($data['guardians'], $data['source_inquiry_id']);
 
-        $application = AdmissionApplication::create([
-            ...$data,
-            'application_number' => $this->generateApplicationNumber(),
-            'intake_academic_year_id' => $data['intake_academic_year_id'] ?? $this->currentYearId(),
-            'status' => $sourceInquiry ? AdmissionStatus::Inquiry->value : $status,
-            'source_inquiry_id' => $sourceInquiry?->getKey(),
-            'applied_at' => in_array($status, [AdmissionStatus::Submitted->value, AdmissionStatus::Inquiry->value], true) ? now() : null,
-            'created_by' => auth()->id(),
-        ]);
+            $application = AdmissionApplication::create([
+                ...$data,
+                'application_number' => $this->generateApplicationNumber(),
+                'intake_academic_year_id' => $data['intake_academic_year_id'] ?? $this->currentYearId(),
+                'status' => $sourceInquiry ? AdmissionStatus::Inquiry->value : $status,
+                'source_inquiry_id' => $sourceInquiry?->getKey(),
+                'applied_at' => in_array($status, [AdmissionStatus::Submitted->value, AdmissionStatus::Inquiry->value], true) ? now() : null,
+                'created_by' => auth()->id(),
+            ]);
 
-        $this->syncGuardians($application, $guardians);
+            $this->syncGuardians($application, $guardians);
+
+            return $application;
+        });
 
         $this->notifications->sendToRoles(
             [RoleName::Registrar->value, RoleName::SchoolAdmin->value],
@@ -100,7 +104,6 @@ class AdmissionService
 
         return $application->fresh(['gradeLevel', 'intakeYear', 'primaryGuardian', 'sourceInquiry']);
     }
-
     public function updateApplication(AdmissionApplication $application, array $data): AdmissionApplication
     {
         $guardians = $data['guardians'] ?? null;
