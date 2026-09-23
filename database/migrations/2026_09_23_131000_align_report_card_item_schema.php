@@ -17,10 +17,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (Schema::hasColumn('report_card_items', 'teacher_comment')) {
-            Schema::table('report_card_items', function (Blueprint $table) {
-                $table->dropColumn('teacher_comment');
-            });
-        }
+        // Intentionally left empty: the column may have pre-existed this migration.
     }
 };
