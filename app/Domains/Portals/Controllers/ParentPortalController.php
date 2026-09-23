@@ -8,8 +8,6 @@ use App\Domains\Attendance\Models\AttendanceRecord;
 use App\Domains\Cms\Models\Event;
 use App\Domains\Cms\Models\NewsItem;
 use App\Domains\Exams\Models\ExamResult;
-use App\Domains\Finance\Models\Invoice;
-use App\Domains\Finance\Models\Payment;
 use App\Domains\Notifications\Models\Notification;
 use App\Domains\Notifications\Models\NotificationPreference;
 use App\Domains\Notifications\Services\NotificationService;
@@ -131,9 +129,6 @@ class ParentPortalController extends Controller
             'recentGrades' => $recentGrades,
             'announcements' => $this->latestAnnouncements()->take(3),
             'upcomingEvents' => $this->upcomingEvents()->take(3),
-            'dueInvoices' => $ward && $guardian?->canAccess('finance', $ward)
-                ? $this->dueInvoices($ward)
-                : collect(),
             'unreadNotifications' => Notification::where('user_id', auth()->id())->unread()->count(),
         ]);
     }
@@ -680,51 +675,6 @@ class ParentPortalController extends Controller
         return to_route('cms.parent.meetings')->with('status', __('Meeting cancelled.'));
     }
 
-    /* ------------------------------------ Billing ---------------------------------- */
-
-    private function dueInvoices(Student $ward): Collection
-    {
-        return Invoice::query()
-            ->where('student_id', $ward->getKey())
-            ->whereIn('status', ['pending', 'partial', 'overdue'])
-            ->with('payments')
-            ->latest()
-            ->get();
-    }
-
-    public function billing(): View
-    {
-        $ward = $this->selectedWard();
-        abort_unless(! $ward || $this->currentGuardian()?->canAccess('finance', $ward), 403);
-
-        return view('portals.parent.billing', [
-            ...$this->viewData($ward),
-            'invoices' => $ward ? $this->dueInvoices($ward) : collect(),
-            'payments' => $ward
-                ? Payment::query()->where('student_id', $ward->getKey())->confirmed()->with('invoice')->latest()->get()
-                : collect(),
-            'summary' => $ward ? [
-                'billed' => $ward->fee_billed,
-                'paid' => $ward->fee_paid,
-                'balance' => $ward->fee_balance,
-            ] : ['billed' => 0, 'paid' => 0, 'balance' => 0],
-        ]);
-    }
-
-    public function receiptShow(Payment $payment): View
-    {
-        $guardian = $this->currentGuardian();
-        abort_unless((bool) $guardian, 403);
-        abort_unless((bool) $guardian->students()->whereKey($payment->student_id)->exists(), 404);
-        abort_unless($guardian->canAccess('finance', $guardian->students()->find($payment->student_id)), 403);
-        abort_unless($payment->status->value === 'confirmed', 404);
-
-        return view('portals.parent.receipt', [
-            ...$this->viewData($guardian->students()->find($payment->student_id)),
-            'payment' => $payment,
-        ]);
-    }
-
     /* ------------------------------------ Requests --------------------------------- */
 
     public function requests(): View
@@ -793,9 +743,6 @@ class ParentPortalController extends Controller
             ...$this->viewData($ward),
             'documents' => $ward
                 ? StudentDocument::query()->where('student_id', $ward->getKey())->where('verified', true)->latest()->get()
-                : collect(),
-            'receipts' => $ward
-                ? Payment::query()->where('student_id', $ward->getKey())->confirmed()->latest()->get()
                 : collect(),
         ]);
     }
