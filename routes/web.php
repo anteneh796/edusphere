@@ -39,7 +39,6 @@ use App\Domains\Exams\Controllers\ExamPapersController;
 use App\Domains\Exams\Controllers\ExamResultsController;
 use App\Domains\Exams\Controllers\ExamsController;
 use App\Domains\Exams\Controllers\ReportCardsController;
-use App\Domains\Finance\Controllers\FinanceController;
 use App\Domains\HumanResources\Controllers\ContractController;
 use App\Domains\HumanResources\Controllers\DepartmentController;
 use App\Domains\HumanResources\Controllers\DocumentController;
@@ -512,15 +511,6 @@ Route::middleware(['auth', 'active', 'force.password'])->group(function () {
         Route::get('notifications/{notification}', [NotificationController::class, 'show'])->name('show');
     });
 
-    Route::middleware(['permission:finance.create'])->name('finance.')->group(function () {
-        Route::get('finance/invoices', [FinanceController::class, 'invoicesIndex'])->name('invoices.index');
-        Route::get('finance/invoices/create', [FinanceController::class, 'invoicesCreate'])->name('invoices.create');
-        Route::post('finance/invoices', [FinanceController::class, 'invoicesStore'])->name('invoices.store');
-        Route::get('finance/payments', [FinanceController::class, 'paymentsIndex'])->name('payments.index');
-        Route::get('finance/payments/create', [FinanceController::class, 'paymentsCreate'])->name('payments.create');
-        Route::post('finance/payments', [FinanceController::class, 'paymentsStore'])->name('payments.store');
-        Route::post('finance/payments/{payment}/confirm', [FinanceController::class, 'paymentsConfirm'])->name('payments.confirm');
-    });
 
     Route::middleware(['permission:parent_services.view'])->name('guardian-services.')->group(function () {
         Route::get('parent-services/absences', [GuardianServicesController::class, 'absencesIndex'])->name('absences.index');
@@ -729,8 +719,6 @@ Route::middleware(['auth', 'active', 'role:parent'])->prefix('parent')->name('cm
     Route::get('meetings', [ParentPortalController::class, 'meetingRequests'])->name('meetings');
     Route::post('meetings', [ParentPortalController::class, 'meetingRequestsStore'])->name('meetings.store');
     Route::post('meetings/{meetingRequest}/cancel', [ParentPortalController::class, 'meetingRequestCancel'])->name('meetings.cancel');
-    Route::get('billing', [ParentPortalController::class, 'billing'])->name('billing');
-    Route::get('receipts/{payment}', [ParentPortalController::class, 'receiptShow'])->name('receipts.show');
     Route::get('requests', [ParentPortalController::class, 'requests'])->name('requests');
     Route::post('requests', [ParentPortalController::class, 'requestsStore'])->name('requests.store');
     Route::get('documents', [ParentPortalController::class, 'documents'])->name('documents');
