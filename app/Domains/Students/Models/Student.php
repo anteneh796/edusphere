@@ -9,8 +9,6 @@ use App\Domains\Academics\Models\GradeLevel;
 use App\Domains\Accounts\Models\User;
 use App\Domains\Attendance\Models\AttendanceRecord;
 use App\Domains\Exams\Models\ExamResult;
-use App\Domains\Finance\Models\Invoice;
-use App\Domains\Finance\Models\Payment;
 use App\Support\Enums\AttendanceStatus;
 use App\Support\Enums\StudentStatus;
 use App\Support\HasUuid;
@@ -121,16 +119,6 @@ class Student extends Model
         return $this->belongsTo(Guardian::class, 'guardian_id');
     }
 
-    public function invoices(): HasMany
-    {
-        return $this->hasMany(Invoice::class);
-    }
-
-    public function payments(): HasMany
-    {
-        return $this->hasMany(Payment::class);
-    }
-
     public function enrollments(): HasMany
     {
         return $this->hasMany(StudentEnrollment::class)
@@ -225,28 +213,6 @@ class Student extends Model
             ->where('is_homeroom', true)
             ->with('teacher')
             ->first()?->teacher;
-    }
-
-    /* --------------------------------- Finance -------------------------------- */
-
-    public function getFeeBilledAttribute(): float
-    {
-        return round((float) $this->invoices()->sum('amount'), 2);
-    }
-
-    public function getFeePaidAttribute(): float
-    {
-        return round((float) $this->payments()->confirmed()->sum('amount'), 2);
-    }
-
-    public function getFeeBalanceAttribute(): float
-    {
-        return round(max(0, $this->fee_billed - $this->fee_paid), 2);
-    }
-
-    public function getLastPaymentAmountAttribute(): float
-    {
-        return round((float) ($this->payments()->confirmed()->latest('paid_at')->value('amount') ?? 0), 2);
     }
 
     /* --------------------------------- Scopes ---------------------------------- */
