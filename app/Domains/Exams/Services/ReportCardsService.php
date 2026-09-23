@@ -8,6 +8,7 @@ use App\Domains\Exams\Models\ReportCard;
 use App\Domains\Exams\Models\ReportCardItem;
 use App\Domains\Students\Models\Student;
 use App\Support\Enums\ReportCardStatus;
+use Illuminate\Support\Facades\DB;
 
 class ReportCardsService extends ExamsService
 {
@@ -19,58 +20,81 @@ class ReportCardsService extends ExamsService
      */
     public function generateForStudent(Exam $exam, string $studentId): ReportCard
     {
-        $student = Student::findOrFail($studentId);
+        return DB::transaction(function () use ($exam, $studentId) {
+            $exam = Exam::query()->lockForUpdate()->findOrFail($exam->getKey());
+            $student = Student::findOrFail($studentId);
 
-        $papers = $exam->papers()
-            ->when($student->class_room_id, fn ($query) => $query->where('class_room_id', $student->class_room_id))
-            ->with(['subject' => fn ($q) => $q->orderBy('position')])
-            ->with(['results' => fn ($q) => $q->where('student_id', $studentId)])
-            ->get();
+            $card = ReportCard::query()
+                ->where('exam_id', $exam->getKey())
+                ->where('student_id', $studentId)
+                ->lockForUpdate()
+                ->first();
 
-        $totalMax = $papers->sum(fn (ExamSubject $paper) => (float) $paper->max_marks);
-        $totalObtained = $papers->sum(
-            fn (ExamSubject $paper) => (float) ($paper->results->first()?->marks_obtained ?? 0)
-        );
-
-        $rank = $this->classRank($exam, $student);
-
-        $card = ReportCard::create([
-            'academic_year_id' => $this->currentYear()->getKey(),
-            'academic_term_id' => $this->currentYear()->terms()->first()?->getKey() ?? $exam->academic_term_id,
-            'exam_id' => $exam->getKey(),
-            'student_id' => $studentId,
-            'status' => ReportCardStatus::Generated->value,
-            'total_max_marks' => $totalMax,
-            'total_obtained_marks' => $totalObtained,
-            'average_percent' => $totalMax > 0 ? round(($totalObtained / $totalMax) * 100, 2) : null,
-            'class_rank' => $rank['rank'] ?? null,
-            'class_size' => $rank['size'] ?? null,
-        ]);
-
-        foreach ($papers as $paper) {
-            $result = $paper->results->first();
-
-            if (! $result || $result->marks_obtained === null) {
-                continue;
+            if ($card?->isLocked()) {
+                throw new \RuntimeException('Published report cards are locked and cannot be regenerated.');
             }
 
-            ReportCardItem::updateOrCreate(
-                ['report_card_id' => $card->getKey(), 'subject_id' => $paper->subject_id],
-                [
+            $papers = $exam->papers()
+                ->when($student->class_room_id, fn ($query) => $query->where('class_room_id', $student->class_room_id))
+                ->with(['subject' => fn ($q) => $q->orderBy('position')])
+                ->with(['results' => fn ($q) => $q->where('student_id', $studentId)])
+                ->get();
+
+            $totalMax = $papers->sum(fn (ExamSubject $paper) => (float) $paper->max_marks);
+            $totalObtained = $papers->sum(fn (ExamSubject $paper) => (float) ($paper->results->first()?->marks_obtained ?? 0));
+            $rank = $this->classRank($exam, $student);
+
+            if (! $card) {
+                $card = ReportCard::create([
+                    'academic_year_id' => $exam->academic_year_id,
+                    'academic_term_id' => $exam->academic_term_id,
+                    'exam_id' => $exam->getKey(),
+                    'student_id' => $studentId,
+                    'status' => ReportCardStatus::Generated->value,
+                    'total_max_marks' => $totalMax,
+                    'total_obtained_marks' => $totalObtained,
+                    'average_percent' => $totalMax > 0 ? round(($totalObtained / $totalMax) * 100, 2) : null,
+                    'class_rank' => $rank['rank'] ?? null,
+                    'class_size' => $rank['size'] ?? null,
+                ]);
+            } else {
+                $card->update([
+                    'academic_year_id' => $exam->academic_year_id,
+                    'academic_term_id' => $exam->academic_term_id,
+                    'status' => ReportCardStatus::Generated->value,
+                    'total_max_marks' => $totalMax,
+                    'total_obtained_marks' => $totalObtained,
+                    'average_percent' => $totalMax > 0 ? round(($totalObtained / $totalMax) * 100, 2) : null,
+                    'class_rank' => $rank['rank'] ?? null,
+                    'class_size' => $rank['size'] ?? null,
+                ]);
+
+                $card->items()->delete();
+            }
+
+            foreach ($papers as $paper) {
+                $result = $paper->results->first();
+
+                if (! $result || $result->marks_obtained === null) {
+                    continue;
+                }
+
+                ReportCardItem::create([
+                    'report_card_id' => $card->getKey(),
+                    'subject_id' => $paper->subject_id,
                     'max_marks' => (float) $paper->max_marks,
                     'pass_marks' => (float) $paper->pass_marks,
                     'marks_obtained' => (float) $result->marks_obtained,
                     'percentage' => $result->percentage(),
                     'passes' => (float) $result->marks_obtained >= (float) $paper->pass_marks,
-                ]
-            );
-        }
+                ]);
+            }
 
-        $this->snapshotFromResults($card, $exam, $student);
+            $this->snapshotFromResults($card, $exam, $student);
 
-        return $card;
+            return $card->fresh(['items', 'academicYear', 'academicTerm', 'exam', 'student']);
+        });
     }
-
     /**
      * Standard competition class ranking from total marks for an exam.
      *
@@ -147,23 +171,40 @@ class ReportCardsService extends ExamsService
 
     public function approve(ReportCard $card, string $userId): void
     {
-        $card->update([
-            'status' => ReportCardStatus::Approved->value,
-            'approved_by_id' => $userId,
-            'approved_at' => now(),
-        ]);
+        DB::transaction(function () use ($card, $userId) {
+            $card = ReportCard::query()->lockForUpdate()->findOrFail($card->getKey());
+
+            if ($card->isLocked() || $card->status === ReportCardStatus::Published) {
+                throw new \RuntimeException('Published report cards are locked.');
+            }
+
+            if (! in_array($card->status, [ReportCardStatus::Generated, ReportCardStatus::Submitted], true)) {
+                throw new \RuntimeException('Only generated or submitted report cards can be approved.');
+            }
+
+            $card->update([
+                'status' => ReportCardStatus::Approved->value,
+                'approved_by_id' => $userId,
+                'approved_at' => now(),
+            ]);
+        });
     }
 
     public function publish(ReportCard $card, string $userId): void
     {
-        if ($card->status !== ReportCardStatus::Approved) {
-            throw new \RuntimeException('Only approved report cards can be published.');
-        }
+        DB::transaction(function () use ($card, $userId) {
+            $card = ReportCard::query()->lockForUpdate()->findOrFail($card->getKey());
 
-        $card->update([
-            'status' => ReportCardStatus::Published->value,
-            'published_by_id' => $userId,
-            'published_at' => now(),
-        ]);
+            if ($card->isLocked() || $card->status !== ReportCardStatus::Approved) {
+                throw new \RuntimeException('Only approved and unlocked report cards can be published.');
+            }
+
+            $card->update([
+                'status' => ReportCardStatus::Published->value,
+                'published_by_id' => $userId,
+                'published_at' => now(),
+                'locked_at' => now(),
+            ]);
+        });
     }
 }
