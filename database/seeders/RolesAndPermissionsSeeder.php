@@ -10,6 +10,9 @@ class RolesAndPermissionsSeeder extends Seeder
 {
     public function run(): void
     {
+        Role::where('name', 'finance_officer')->delete();
+        Permission::where('name', 'like', 'finance.%')->delete();
+
         $matrix = config('rbac.roles');
         $labels = config('rbac.role_labels');
 
