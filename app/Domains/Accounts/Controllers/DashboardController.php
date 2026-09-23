@@ -50,7 +50,6 @@ class DashboardController extends Controller
                 ? User::whereHas('roles', fn ($query) => $query->where('name', RoleName::Teacher->value))->count()
                 : 0,
             'classes' => 0,
-            'invoices' => Schema::hasTable('invoices') ? 0 : 0,
         ];
 
         if (Schema::hasTable('class_rooms')) {
@@ -125,7 +124,6 @@ class DashboardController extends Controller
             'attendance_rate' => $this->attendanceRate(),
             'pending_approvals' => ApprovalRequest::pending()->count(),
             'unread_notifications' => Notification::where('user_id', $user->getKey())->unread()->count(),
-            'fee_collection' => null,
         ];
 
         $pendingApprovals = $user->hasPermission('approvals.view')
