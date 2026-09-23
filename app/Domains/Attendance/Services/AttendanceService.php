@@ -15,6 +15,7 @@ use App\Support\Enums\AttendanceSessionStatus;
 use App\Support\Enums\AttendanceStatus;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceService
 {
@@ -29,46 +30,68 @@ class AttendanceService
         $date = $date instanceof Carbon ? $date : Carbon::parse($date);
         $date = $date->startOfDay();
 
-        return AttendanceSession::updateOrCreate(
-            ['class_room_id' => $class->getKey(), 'date' => $date],
-            [
-                'academic_year_id' => $this->currentYear()->getKey(),
-                'taken_by_id' => $takenById,
-                'status' => AttendanceSessionStatus::Open->value,
-                'opened_at' => now(),
-                'closed_at' => null,
-            ]
-        );
+        return DB::transaction(function () use ($class, $date, $takenById) {
+            return AttendanceSession::query()
+                ->lockForUpdate()
+                ->firstOrCreate(
+                    ['class_room_id' => $class->getKey(), 'date' => $date],
+                    [
+                        'academic_year_id' => $this->currentYear()->getKey(),
+                        'taken_by_id' => $takenById,
+                        'status' => AttendanceSessionStatus::Open->value,
+                        'opened_at' => now(),
+                        'closed_at' => null,
+                    ]
+                );
+        });
     }
 
     public function upsertRecords(AttendanceSession $session, string $markedById, array $rows): void
     {
-        foreach ($rows as $row) {
-            $studentId = $row['student_id'] ?? null;
+        DB::transaction(function () use ($session, $markedById, $rows) {
+            $lockedSession = AttendanceSession::query()->lockForUpdate()->findOrFail($session->getKey());
 
-            if (! $studentId || empty($row['status'])) {
-                continue;
+            if ($lockedSession->isLocked()) {
+                throw new \RuntimeException('Attendance session is locked and cannot be changed.');
             }
 
-            AttendanceRecord::updateOrCreate(
-                ['attendance_session_id' => $session->getKey(), 'student_id' => $studentId],
-                [
-                    'status' => $row['status'],
-                    'note' => ! empty($row['note']) ? $row['note'] : null,
-                    'marked_by_id' => $markedById,
-                ]
-            );
-        }
+            foreach ($rows as $row) {
+                $studentId = $row['student_id'] ?? null;
+
+                if (! $studentId || empty($row['status'])) {
+                    continue;
+                }
+
+                AttendanceRecord::updateOrCreate(
+                    ['attendance_session_id' => $lockedSession->getKey(), 'student_id' => $studentId],
+                    [
+                        'status' => $row['status'],
+                        'note' => ! empty($row['note']) ? $row['note'] : null,
+                        'marked_by_id' => $markedById,
+                    ]
+                );
+            }
+        });
     }
 
     public function closeSession(AttendanceSession $session): void
     {
-        $session->update([
-            'status' => AttendanceSessionStatus::Closed->value,
-            'closed_at' => now(),
-            'submitted_at' => $session->submitted_at ?? now(),
-            'locked_at' => now(),
-        ]);
+        $session = DB::transaction(function () use ($session) {
+            $session = AttendanceSession::query()->lockForUpdate()->findOrFail($session->getKey());
+
+            if ($session->isLocked()) {
+                return $session;
+            }
+
+            $session->update([
+                'status' => AttendanceSessionStatus::Closed->value,
+                'closed_at' => now(),
+                'submitted_at' => $session->submitted_at ?? now(),
+                'locked_at' => now(),
+            ]);
+
+            return $session;
+        });
 
         $this->notifyAbsentParents($session);
     }
@@ -116,12 +139,16 @@ class AttendanceService
 
     public function unlockSession(AttendanceSession $session): void
     {
-        $session->update([
-            'status' => AttendanceSessionStatus::Open->value,
-            'closed_at' => null,
-            'submitted_at' => null,
-            'locked_at' => null,
-        ]);
+        DB::transaction(function () use ($session) {
+            $session = AttendanceSession::query()->lockForUpdate()->findOrFail($session->getKey());
+
+            $session->update([
+                'status' => AttendanceSessionStatus::Open->value,
+                'closed_at' => null,
+                'submitted_at' => null,
+                'locked_at' => null,
+            ]);
+        });
     }
 
     /**
@@ -309,7 +336,7 @@ class AttendanceService
     {
         $rangeFilter = function ($query) use ($from, $to, $gradeId, $classId) {
             $query
-                ->whereBetween('attendance_records.created_at', [$from, $to->endOfDay()])
+                ->whereHas('session', fn ($q) => $q->whereBetween('date', [$from, $to->endOfDay()])
                 ->when($classId, fn ($builder, $id) => $builder->whereHas('session', fn ($q) => $q->where('class_room_id', $id)))
                 ->when($gradeId, fn ($builder, $id) => $builder->whereHas(
                     'session',
@@ -321,10 +348,10 @@ class AttendanceService
             ->with('classRoom.gradeLevel')
             ->whereHas('attendanceRecords', $rangeFilter)
             ->withCount([
-                'attendanceRecords as present_count' => fn ($query) => $query->where('status', AttendanceStatus::Present->value)->whereBetween('attendance_records.created_at', [$from, $to->endOfDay()]),
-                'attendanceRecords as absent_count' => fn ($query) => $query->where('status', AttendanceStatus::Absent->value)->whereBetween('attendance_records.created_at', [$from, $to->endOfDay()]),
-                'attendanceRecords as late_count' => fn ($query) => $query->where('status', AttendanceStatus::Late->value)->whereBetween('attendance_records.created_at', [$from, $to->endOfDay()]),
-                'attendanceRecords as excused_count' => fn ($query) => $query->where('status', AttendanceStatus::Excused->value)->whereBetween('attendance_records.created_at', [$from, $to->endOfDay()]),
+                'attendanceRecords as present_count' => fn ($query) => $query->where('status', AttendanceStatus::Present->value)->whereHas('session', fn ($q) => $q->whereBetween('date', [$from, $to->endOfDay()]),
+                'attendanceRecords as absent_count' => fn ($query) => $query->where('status', AttendanceStatus::Absent->value)->whereHas('session', fn ($q) => $q->whereBetween('date', [$from, $to->endOfDay()]),
+                'attendanceRecords as late_count' => fn ($query) => $query->where('status', AttendanceStatus::Late->value)->whereHas('session', fn ($q) => $q->whereBetween('date', [$from, $to->endOfDay()]),
+                'attendanceRecords as excused_count' => fn ($query) => $query->where('status', AttendanceStatus::Excused->value)->whereHas('session', fn ($q) => $q->whereBetween('date', [$from, $to->endOfDay()]),
             ])
             ->orderBy('student_number')
             ->get()
@@ -352,8 +379,8 @@ class AttendanceService
     {
         $records = $student->attendanceRecords()
             ->with(['session.classRoom.gradeLevel', 'session.takenBy'])
-            ->when($from, fn ($query, $date) => $query->whereDate('attendance_records.created_at', '>=', $date))
-            ->when($to, fn ($query, $date) => $query->whereDate('attendance_records.created_at', '<=', $date))
+            ->when($from, fn ($query, $date) => $query->whereHas('session', fn ($q) => $q->whereDate('date', '>=', $date)))
+            ->when($to, fn ($query, $date) => $query->whereHas('session', fn ($q) => $q->whereDate('date', '<=', $date)))
             ->orderByDesc('created_at')
             ->get();
 
@@ -373,7 +400,7 @@ class AttendanceService
     {
         return AttendanceRecord::with(['student', 'session.classRoom.gradeLevel'])
             ->where('status', $status->value)
-            ->whereBetween('attendance_records.created_at', [$from, $to->endOfDay()])
+            ->whereHas('session', fn ($q) => $q->whereBetween('date', [$from, $to->endOfDay()])
             ->when($classId, fn ($builder, $id) => $builder->whereHas('session', fn ($q) => $q->where('class_room_id', $id)))
             ->when($gradeId, fn ($builder, $id) => $builder->whereHas(
                 'session',
@@ -510,7 +537,7 @@ class AttendanceService
     {
         return AttendanceRecord::with(['student.classRoom.gradeLevel'])
             ->where('status', AttendanceStatus::Late->value)
-            ->whereBetween('attendance_records.created_at', [$from, $to->endOfDay()])
+            ->whereHas('session', fn ($q) => $q->whereBetween('date', [$from, $to->endOfDay()])
             ->when($classId, fn ($builder, $id) => $builder->whereHas('session', fn ($q) => $q->where('class_room_id', $id)))
             ->when($gradeId, fn ($builder, $id) => $builder->whereHas(
                 'session',
