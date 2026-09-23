@@ -17,7 +17,7 @@
             <x-empty-state
                 icon="users"
                 :title="__('No wards on this account')"
-                :message="__('Once enrolled, your children will appear here so you can track attendance, grades and fees.')" />
+                :message="__('Once enrolled, your children will appear here so you can track attendance, grades and school updates.')" />
         </x-card>
     @else
         <div class="grid grid-stats">
@@ -36,11 +36,7 @@
                 :value="$homework->count()"
                 icon="pencil"
                 color="info" />
-            <x-stat-card
-                :label="__('Fees balance')"
-                :value="number_format((float) ($dueInvoices->sum(fn ($i) => (float) $i->balance()) ?? 0), 2)"
-                icon="receipt"
-                color="warning" />
+
         </div>
 
         <div class="grid grid-2 mt-4">
@@ -127,20 +123,6 @@
                 @endforelse
             </x-card>
 
-            <x-card :title="__('Outstanding fees')">
-                @forelse ($dueInvoices as $invoice)
-                    <div class="list-row">
-                        <x-icon name="receipt" class="icon-sm text-light" />
-                        <div class="min-w-0 flex-1">
-                            <div class="truncate">{{ $invoice->description }}</div>
-                            <div class="text-xs text-light">{{ $invoice->invoice_number }} · due {{ $invoice->due_date?->format('M d, Y') }}</div>
-                        </div>
-                        <span class="badge badge-{{ $invoice->status?->badgeColor() ?? 'neutral' }}">{{ number_format((float) $invoice->balance(), 2) }}</span>
-                    </div>
-                @empty
-                    <x-empty-state icon="receipt" :title="__('All settled')" :message="__('No outstanding invoices.')" />
-                @endforelse
-            </x-card>
         </div>
 
         <div class="mt-4">
