@@ -59,21 +59,34 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('report_cards', function (Blueprint $table) {
-            $table->dropUnique('report_cards_exam_student_unique');
-        });
+        if (Schema::hasIndex('report_cards', 'report_cards_exam_student_unique')) {
+            Schema::table('report_cards', function (Blueprint $table) {
+                $table->dropUnique('report_cards_exam_student_unique');
+            });
+        }
 
-        Schema::table('student_enrollments', function (Blueprint $table) {
-            $table->dropUnique('student_enrollments_student_year_unique');
-            $table->dropUnique('student_enrollments_class_year_roll_unique');
-        });
+        if (Schema::hasIndex('student_enrollments', 'student_enrollments_student_year_unique')
+            || Schema::hasIndex('student_enrollments', 'student_enrollments_class_year_roll_unique')) {
+            Schema::table('student_enrollments', function (Blueprint $table) {
+                if (Schema::hasIndex('student_enrollments', 'student_enrollments_student_year_unique')) {
+                    $table->dropUnique('student_enrollments_student_year_unique');
+                }
+                if (Schema::hasIndex('student_enrollments', 'student_enrollments_class_year_roll_unique')) {
+                    $table->dropUnique('student_enrollments_class_year_roll_unique');
+                }
+            });
+        }
 
-        Schema::table('attendance_records', function (Blueprint $table) {
-            $table->dropUnique('attendance_records_session_student_unique');
-        });
+        if (Schema::hasIndex('attendance_records', 'attendance_records_session_student_unique')) {
+            Schema::table('attendance_records', function (Blueprint $table) {
+                $table->dropUnique('attendance_records_session_student_unique');
+            });
+        }
 
-        Schema::table('attendance_sessions', function (Blueprint $table) {
-            $table->dropUnique('attendance_sessions_class_date_unique');
-        });
+        if (Schema::hasIndex('attendance_sessions', 'attendance_sessions_class_date_unique')) {
+            Schema::table('attendance_sessions', function (Blueprint $table) {
+                $table->dropUnique('attendance_sessions_class_date_unique');
+            });
+        }
     }
 };
