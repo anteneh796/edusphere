@@ -30,8 +30,12 @@ class ReportCardsService extends ExamsService
                 ->lockForUpdate()
                 ->first();
 
-            if ($card?->isLocked()) {
-                throw new \RuntimeException('Published report cards are locked and cannot be regenerated.');
+            if ($card && ($card->isLocked() || in_array($card->status, [
+                ReportCardStatus::Submitted,
+                ReportCardStatus::Approved,
+                ReportCardStatus::Published,
+            ], true))) {
+                throw new \RuntimeException('Submitted or published report cards cannot be regenerated.');
             }
 
             $papers = $exam->papers()
