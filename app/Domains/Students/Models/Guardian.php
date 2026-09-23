@@ -15,7 +15,7 @@ class Guardian extends Model
 {
     use HasFactory, HasUuid, SoftDeletes;
 
-    public const ACCESS = ['academics', 'attendance', 'finance', 'messages', 'documents', 'requests'];
+    public const ACCESS = ['academics', 'attendance', 'messages', 'documents', 'requests'];
 
     protected $fillable = [
         'user_id',
