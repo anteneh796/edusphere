@@ -12,6 +12,27 @@ class ReportCardItem extends Model
 {
     use HasFactory, HasUuid;
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $item): void {
+            if ($item->reportCard?->isLocked()) {
+                throw new \RuntimeException('Published report card items are immutable.');
+            }
+        });
+
+        static::updating(function (self $item): void {
+            if ($item->reportCard?->isLocked()) {
+                throw new \RuntimeException('Published report card items are immutable.');
+            }
+        });
+
+        static::deleting(function (self $item): void {
+            if ($item->reportCard?->isLocked()) {
+                throw new \RuntimeException('Published report card items cannot be deleted.');
+            }
+        });
+    }
+
     protected $fillable = [
         'report_card_id',
         'subject_id',
