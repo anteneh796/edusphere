@@ -22,9 +22,6 @@
         <x-stat-card :label="__('Total Students')" :value="number_format($counts['students'])" icon="graduation" color="primary" />
         <x-stat-card :label="__('Teachers')" :value="number_format($counts['teachers'])" icon="users" color="info" />
         <x-stat-card :label="__('Classes')" :value="number_format($counts['classes'])" icon="book-open" color="accent" />
-        @if ($isSchoolAdmin)
-            <x-stat-card :label="__('Open Invoices')" :value="number_format($counts['invoices'])" icon="receipt" color="warning" />
-        @endif
         @if ($isSuperAdmin)
             <x-stat-card :label="__('System Users')" :value="number_format($accountStats['users'])" icon="user-check" color="success" />
             <x-stat-card :label="__('Defined Roles')" :value="number_format($accountStats['roles'])" icon="shield" color="danger" />
@@ -36,7 +33,6 @@
             @if ($canViewApprovals)
                 <x-stat-card :label="__('Attendance rate')" :value="$kpis['attendance_rate'] !== null ? $kpis['attendance_rate'].'%' : '—'" icon="clipboard-check" color="success" />
                 <x-stat-card :label="__('Pending approvals')" :value="number_format($kpis['pending_approvals'])" icon="file-text" color="warning" />
-                <x-stat-card :label="__('Fee collection')" :value="$kpis['fee_collection'] === null ? '—' : number_format($kpis['fee_collection']).'%'" icon="banknote" color="danger" />
             @endif
             @if ($canViewNotifications)
                 <x-stat-card :label="__('Unread notifications')" :value="number_format($kpis['unread_notifications'])" icon="bell" color="accent" />
