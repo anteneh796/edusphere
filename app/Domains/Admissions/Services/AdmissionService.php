@@ -357,73 +357,82 @@ class AdmissionService
 
     public function enroll(AdmissionApplication $application): Student
     {
-        $this->guardTransition($application, [AdmissionStatus::Approved->value]);
+        [$student, $application, $parent, $grade] = DB::transaction(function () use ($application) {
+            $application = AdmissionApplication::query()
+                ->with(['intakeYear', 'gradeLevel', 'guardians'])
+                ->lockForUpdate()
+                ->findOrFail($application->getKey());
 
-        $year = $application->intakeYear ?? AcademicYear::current()->first();
-        $grade = $application->gradeLevel;
+            $this->guardTransition($application, [AdmissionStatus::Approved->value]);
 
-        $classRoom = ClassRoom::where('grade_level_id', $grade?->getKey())
-            ->where('academic_year_id', $year?->getKey())
-            ->orderBy('name')
-            ->first();
+            $year = $application->intakeYear ?? AcademicYear::current()->first();
+            $grade = $application->gradeLevel;
 
-        $parent = $this->createParentUser($application);
+            $classRoom = ClassRoom::where('grade_level_id', $grade?->getKey())
+                ->where('academic_year_id', $year?->getKey())
+                ->orderBy('name')
+                ->lockForUpdate()
+                ->first();
 
-        $roll = $year && $classRoom ? $this->students->nextRollNumber($classRoom, $year) : null;
+            $parent = $this->createParentUser($application);
+            $roll = $year && $classRoom ? $this->students->nextRollNumber($classRoom, $year) : null;
 
-        $studentNumber = $year && $classRoom
-            ? $this->students->buildStudentNumber($year, $classRoom, $roll)
-            : $this->fallbackStudentNumber($year);
+            $studentNumber = $year && $classRoom
+                ? $this->students->buildStudentNumber($year, $classRoom, $roll)
+                : $this->fallbackStudentNumber($year);
 
-        $student = Student::create([
-            'student_number' => $studentNumber,
-            'first_name' => $application->first_name,
-            'last_name' => $application->last_name,
-            'other_names' => $application->other_names,
-            'gender' => $application->gender,
-            'date_of_birth' => $application->date_of_birth,
-            'national_id' => $application->national_id,
-            'address' => $application->address,
-            'previous_school' => $application->previous_school,
-            'status' => StudentStatus::Active->value,
-            'enrollment_date' => now()->toDateString(),
-            'grade_level_id' => $grade?->getKey(),
-            'class_room_id' => $classRoom?->getKey(),
-            'academic_year_id' => $year?->getKey(),
-            'user_id' => $parent?->getKey(),
-        ]);
-
-        if ($year && $grade && $classRoom) {
-            StudentEnrollment::create([
-                'student_id' => $student->getKey(),
-                'academic_year_id' => $year->getKey(),
-                'grade_level_id' => $grade->getKey(),
-                'class_room_id' => $classRoom->getKey(),
-                'roll_number' => $roll,
-                'status' => 'active',
-                'enrolled_at' => now()->toDateString(),
+            $student = Student::create([
+                'student_number' => $studentNumber,
+                'first_name' => $application->first_name,
+                'last_name' => $application->last_name,
+                'other_names' => $application->other_names,
+                'gender' => $application->gender,
+                'date_of_birth' => $application->date_of_birth,
+                'national_id' => $application->national_id,
+                'address' => $application->address,
+                'previous_school' => $application->previous_school,
+                'status' => StudentStatus::Active->value,
+                'enrollment_date' => now()->toDateString(),
+                'grade_level_id' => $grade?->getKey(),
+                'class_room_id' => $classRoom?->getKey(),
+                'academic_year_id' => $year?->getKey(),
+                'user_id' => $parent?->getKey(),
             ]);
-        } elseif ($year && $grade) {
-            StudentEnrollment::create([
+
+            if ($year && $grade && $classRoom) {
+                StudentEnrollment::create([
+                    'student_id' => $student->getKey(),
+                    'academic_year_id' => $year->getKey(),
+                    'grade_level_id' => $grade->getKey(),
+                    'class_room_id' => $classRoom->getKey(),
+                    'roll_number' => $roll,
+                    'status' => 'active',
+                    'enrolled_at' => now()->toDateString(),
+                ]);
+            } elseif ($year && $grade) {
+                StudentEnrollment::create([
+                    'student_id' => $student->getKey(),
+                    'academic_year_id' => $year->getKey(),
+                    'grade_level_id' => $grade->getKey(),
+                    'status' => 'active',
+                    'enrolled_at' => now()->toDateString(),
+                ]);
+            }
+
+            $this->linkGuardians($application, $student, $parent);
+
+            $application->update([
+                'status' => AdmissionStatus::Enrolled->value,
                 'student_id' => $student->getKey(),
-                'academic_year_id' => $year->getKey(),
-                'grade_level_id' => $grade->getKey(),
-                'status' => 'active',
-                'enrolled_at' => now()->toDateString(),
+                'parent_user_id' => $parent?->getKey(),
+                'enrolled_at' => now(),
             ]);
-        }
 
-        $this->linkGuardians($application, $student, $parent);
-
-        $application->update([
-            'status' => AdmissionStatus::Enrolled->value,
-            'student_id' => $student->getKey(),
-            'parent_user_id' => $parent?->getKey(),
-            'enrolled_at' => now(),
-        ]);
+            return [$student, $application, $parent, $grade];
+        });
 
         $this->notifications->sendToRoles(
-            [RoleName::FinanceOfficer->value, RoleName::Registrar->value],
+            [RoleName::Registrar->value, RoleName::SchoolAdmin->value],
             $this->payload($application, 'admission', 'enrollment',
                 __('New enrolment'),
                 __(':name enrolled as :number in grade :grade.', [
@@ -447,7 +456,6 @@ class AdmissionService
 
         return $student->fresh(['gradeLevel', 'classRoom', 'academicYear']);
     }
-
     private function createParentUser(AdmissionApplication $application): ?User
     {
         $guardian = $application->primaryGuardian;
