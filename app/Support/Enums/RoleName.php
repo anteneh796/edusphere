@@ -9,7 +9,6 @@ enum RoleName: string
     case Principal = 'principal';
     case VicePrincipal = 'vice_principal';
     case Registrar = 'registrar';
-    case FinanceOfficer = 'finance_officer';
     case HROfficer = 'hr_officer';
     case Reception = 'reception';
     case Teacher = 'teacher';
@@ -30,8 +29,7 @@ enum RoleName: string
             self::SchoolAdmin => 3,
             self::VicePrincipal => 4,
             self::Registrar => 5,
-            self::FinanceOfficer => 6,
-            self::HROfficer => 7,
+            self::HROfficer => 6,
             self::Reception => 8,
             self::Teacher => 8,
             self::Parent => 9,
