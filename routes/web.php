@@ -82,9 +82,12 @@ Route::middleware('guest')->group(function () {
 
 /* --------------------- Authenticated area ------------------------- */
 
-Route::middleware(['auth', 'active', 'force.password'])->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
+    // Logout must remain available even when a user is forced to change password.
     Route::post('logout', [LoginController::class, 'logout'])->name('auth.logout');
+});
 
+Route::middleware(['auth', 'active', 'force.password'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::prefix('profile')->name('profile.')->group(function () {
