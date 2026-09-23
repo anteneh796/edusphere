@@ -4,18 +4,12 @@ namespace App\Domains\Exams\Policies;
 
 use App\Domains\Accounts\Models\User;
 use App\Domains\Exams\Models\Exam;
-use App\Support\Enums\RoleName;
 
 class ExamPolicy
 {
     public function viewAny(?User $user): bool
     {
-        return $user && ($user->hasRole([
-            RoleName::SuperAdmin->value,
-            RoleName::Principal->value,
-            RoleName::Registrar->value,
-            RoleName::Teacher->value,
-        ]));
+        return (bool) $user?->hasPermission('exams.view');
     }
 
     public function view(?User $user, Exam $exam): bool
@@ -25,38 +19,26 @@ class ExamPolicy
 
     public function create(?User $user): bool
     {
-        return $user && ($user->hasRole([
-            RoleName::SuperAdmin->value,
-            RoleName::Principal->value,
-            RoleName::Registrar->value,
-        ]));
+        return (bool) $user?->hasPermission('exams.create');
     }
 
     public function update(?User $user, Exam $exam): bool
     {
-        return $this->create($user);
+        return (bool) $user?->hasPermission('exams.edit');
     }
 
     public function managePapers(?User $user, Exam $exam): bool
     {
-        return $this->create($user);
+        return (bool) $user?->hasPermission('exams.edit');
     }
 
     public function enterResults(?User $user, Exam $exam): bool
     {
-        return $user && ($user->hasRole([
-            RoleName::SuperAdmin->value,
-            RoleName::Principal->value,
-            RoleName::Registrar->value,
-            RoleName::Teacher->value,
-        ]));
+        return $this->viewAny($user);
     }
 
     public function delete(?User $user, Exam $exam): bool
     {
-        return $user && ($user->hasRole([
-            RoleName::SuperAdmin->value,
-            RoleName::Principal->value,
-        ]));
+        return (bool) $user?->hasPermission('exams.delete');
     }
 }

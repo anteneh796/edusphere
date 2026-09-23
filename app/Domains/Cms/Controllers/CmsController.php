@@ -2,9 +2,12 @@
 
 namespace App\Domains\Cms\Controllers;
 
+use App\Domains\Cms\Models\ContentBlock;
+use App\Domains\Cms\Models\Event;
 use App\Domains\Cms\Models\GalleryItem;
 use App\Domains\Cms\Models\NewsItem;
 use App\Domains\Cms\Models\Page;
+use App\Domains\Cms\Models\Testimonial;
 use App\Http\Controllers\Controller;
 use Illuminate\View\View;
 
@@ -20,6 +23,11 @@ class CmsController extends Controller
             'totalNews' => NewsItem::withTrashed()->count(),
             'publishedGallery' => GalleryItem::published()->count(),
             'totalGallery' => GalleryItem::withTrashed()->count(),
+            'publishedEvents' => Event::published()->count(),
+            'totalEvents' => Event::withTrashed()->count(),
+            'publishedTestimonials' => Testimonial::published()->count(),
+            'totalTestimonials' => Testimonial::withTrashed()->count(),
+            'totalBlocks' => ContentBlock::count(),
         ]);
     }
 }

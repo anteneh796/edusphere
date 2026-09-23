@@ -1,10 +1,10 @@
-<x-layouts.app :title="'Add user'">
+<x-layouts.app :title="__('Add user')">
     <x-breadcrumb :items="[
-        ['label' => 'Users & Roles', 'url' => route('users.index')],
-        ['label' => 'Add user'],
+        ['label' => __('Users & Roles'), 'url' => route('users.index')],
+        ['label' => __('Add user')],
     ]" />
 
-    <x-page-header title="Add user" description="Create an account and assign access roles." />
+    <x-page-header :title="__('Add user')" :description="__('Create an account and assign access roles.')" />
 
     <div style="max-width: 880px;">
         <x-card>
@@ -13,10 +13,10 @@
                 @include('users._form', ['editing' => false])
 
                 <div class="card-footer">
-                    <a href="{{ route('users.index') }}" class="btn btn-secondary">Cancel</a>
+                    <a href="{{ route('users.index') }}" class="btn btn-secondary">{{ __('Cancel') }}</a>
                     <button type="submit" class="btn btn-primary">
                         <x-icon name="check" class="icon-sm" />
-                        Create user
+                        {{ __('Create user') }}
                     </button>
                 </div>
             </form>

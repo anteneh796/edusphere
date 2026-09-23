@@ -1,10 +1,10 @@
-<x-layouts.app :title="'New Exam'">
+<x-layouts.app :title="__('New Exam')">
     <x-breadcrumb :items="[
-        ['label' => 'Exams', 'url' => route('exams.index')],
-        ['label' => 'New exam'],
+        ['label' => __('Exams'), 'url' => route('exams.index')],
+        ['label' => __('New exam')],
     ]" />
 
-    <x-page-header title="New exam" description="Create an examination window, then assign papers to classes." />
+    <x-page-header :title="__('New exam')" :description="__('Create an examination window, then assign papers to classes.')" />
 
     <div style="max-width: 860px;">
         <x-card>
@@ -15,9 +15,9 @@
                 <div class="card-footer">
                     <button type="submit" class="btn btn-primary">
                         <x-icon name="check" class="icon-sm" />
-                        Create exam
+                        {{ __('Create exam') }}
                     </button>
-                    <a href="{{ route('exams.index') }}" class="btn btn-secondary">Cancel</a>
+                    <a href="{{ route('exams.index') }}" class="btn btn-secondary">{{ __('Cancel') }}</a>
                 </div>
             </form>
         </x-card>

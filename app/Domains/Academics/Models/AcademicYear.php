@@ -32,6 +32,11 @@ class AcademicYear extends Model
         return $this->hasMany(ClassRoom::class);
     }
 
+    public function terms()
+    {
+        return $this->hasMany(AcademicTerm::class);
+    }
+
     public function currentPeriodLabel(): string
     {
         return "{$this->start_date->format('Y')} / {$this->end_date->format('Y')}";

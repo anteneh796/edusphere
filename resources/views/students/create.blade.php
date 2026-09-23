@@ -1,22 +1,22 @@
-<x-layouts.app :title="'Register student'">
+<x-layouts.app :title="__('Register student')">
     <x-breadcrumb :items="[
-        ['label' => 'Students', 'url' => route('students.index')],
-        ['label' => 'Register student'],
+        ['label' => __('Students'), 'url' => route('students.index')],
+        ['label' => __('Register student')],
     ]" />
 
-    <x-page-header title="Register student" description="Create a student record with placement and primary guardian." />
+    <x-page-header :title="__('Register student')" :description="__('Create a student record with placement and primary guardian.')" />
 
     <div style="max-width: 1100px;">
         <x-card>
-            <form method="POST" action="{{ route('students.store') }}" novalidate>
+            <form method="POST" action="{{ route('students.store') }}" novalidate enctype="multipart/form-data">
                 @csrf
                 @include('students._form', ['currentYearName' => $currentYearName ?? \App\Domains\Academics\Models\AcademicYear::current()->first()?->name])
 
                 <div class="card-footer">
-                    <a href="{{ route('students.index') }}" class="btn btn-secondary">Cancel</a>
+                    <a href="{{ route('students.index') }}" class="btn btn-secondary">{{ __('Cancel') }}</a>
                     <button type="submit" class="btn btn-primary">
                         <x-icon name="check" class="icon-sm" />
-                        Register student
+                        {{ __('Register student') }}
                     </button>
                 </div>
             </form>

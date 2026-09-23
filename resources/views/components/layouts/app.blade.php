@@ -8,11 +8,16 @@
     $navSections = \App\Support\Navigation::forUser($user);
     $pageTitle = $title ? $title.' · '.$appName : $appName;
     $routeName = request()->route()?->getName();
+    $currentLocale = app()->getLocale();
     $recentActivity = \App\Domains\Accounts\Models\AuditLog::with('user')->latest()->limit(6)->get();
     $canViewAudit = $user->hasRole([
         \App\Support\Enums\RoleName::SuperAdmin->value,
         \App\Support\Enums\RoleName::Principal->value,
     ]);
+    $canViewNotifications = $user->hasPermission('notifications.view');
+    $unreadNotifications = $canViewNotifications
+        ? \App\Domains\Notifications\Models\Notification::where('user_id', $user->getKey())->unread()->count()
+        : 0;
 @endphp
 
 <!DOCTYPE html>
@@ -32,7 +37,7 @@
 <body class="app-shell">
     <div class="network-banner">
         <x-icon name="alert-triangle" class="icon-sm" />
-        You are offline. Changes will be saved and synced automatically.
+        {{ __('You are offline. Changes will be saved and synced automatically.') }}
     </div>
 
     <div class="app-body">
@@ -65,7 +70,7 @@
             <div class="sidebar-footer">
                 <button type="button" class="sidebar-collapse-btn" @click="$store.ui.collapseSidebar()">
                     <x-icon name="chevrons-left" class="icon-sm" />
-                    <span>Collapse</span>
+                    <span>{{ __('Collapse') }}</span>
                 </button>
             </div>
         </aside>
@@ -81,21 +86,64 @@
 
                 <div class="topbar-search">
                     <x-icon name="search" class="icon-sm" />
-                    <input type="search" placeholder="Search students, invoices, subjects…" aria-label="Search">
+                    <input type="search" placeholder="{{ __('Search students, invoices, subjects…') }}" aria-label="Search">
                 </div>
 
                 <div class="topbar-actions">
-                    <div class="dropdown" x-data="dropdown" @click.outside="open = false">
+                    @php($userRoles = auth()->user()->roles)
+                    @if ($userRoles->isNotEmpty())
+                        <div class="role-chip-group" x-data="{ activeRole: null }" @click.outside="activeRole = null">
+                            @foreach ($userRoles as $role)
+                                <button
+                                    type="button"
+                                    class="role-chip @if ($loop->first) role-chip-active @endif"
+                                    :class="{ 'role-chip-active': activeRole === {{ Js::from($role->name) }} }"
+                                    @click="activeRole = activeRole === {{ Js::from($role->name) }} ? null : {{ Js::from($role->name) }}"
+                                    title="Active role context"
+                                >
+                                    <x-icon name="shield-check" class="icon-sm" />
+                                    {{ \App\Support\Enums\RoleName::from($role->name)->label() }}
+                                </button>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    <div class="dropdown" x-data="dropdown" @click.outside="open = false" :class="{ open: open }">
+                        <button type="button" class="topbar-icon-btn" @click="toggle" :aria-label="__('Switch language')">
+                            <x-icon name="languages" />
+                        </button>
+
+                        <div class="dropdown-menu" x-show="open" x-cloak x-transition style="right: 0;">
+                            <div class="dropdown-header">
+                                <b>{{ __('Language') }}</b>
+                            </div>
+                            <a href="{{ route('public.locale', 'en') }}" class="dropdown-item {{ $currentLocale === 'en' ? 'active' : '' }}">
+                                English
+                                @if ($currentLocale === 'en')<x-icon name="check" class="icon-sm" />@endif
+                            </a>
+                            <a href="{{ route('public.locale', 'am') }}" class="dropdown-item {{ $currentLocale === 'am' ? 'active' : '' }}">
+                                አማርኛ
+                                @if ($currentLocale === 'am')<x-icon name="check" class="icon-sm" />@endif
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="dropdown" x-data="dropdown" @click.outside="open = false" :class="{ open: open }">
                         <button type="button" class="topbar-icon-btn" @click="toggle" aria-label="Notifications">
                             <x-icon name="bell" />
-                            @if ($recentActivity->isNotEmpty())
+                            @if ($unreadNotifications > 0)
+                                <span class="badge-count">{{ min($unreadNotifications, 99) }}</span>
+                            @elseif ($recentActivity->isNotEmpty())
                                 <span class="dot"></span>
                             @endif
                         </button>
 
                         <div class="dropdown-menu" x-show="open" x-cloak x-transition style="width: 320px; right: 0;">
                             <div class="dropdown-header">
-                                <b>Recent activity</b>
+                                <b>{{ __('Recent activity') }}</b>
+                                @if ($unreadNotifications > 0)
+                                    <span class="text-xs text-muted">{{ __(':count unread notifications', ['count' => $unreadNotifications]) }}</span>
+                                @endif
                             </div>
                             <div style="max-height: 320px; overflow-y: auto;">
                                 @forelse ($recentActivity as $log)
@@ -109,20 +157,26 @@
                                     </div>
                                 @empty
                                     <div class="dropdown-item">
-                                        <div class="text-muted text-sm">No activity recorded yet.</div>
+                                        <div class="text-muted text-sm">{{ __('No activity recorded yet.') }}</div>
                                     </div>
                                 @endforelse
                             </div>
                             @if ($canViewAudit)
                                 <a href="{{ route('audit.index') }}" class="dropdown-item" style="font-weight: var(--weight-semibold);">
                                     <x-icon name="shield-check" class="icon-sm" />
-                                    View full audit log
+                                    {{ __('View full audit log') }}
+                                </a>
+                            @endif
+                            @if ($canViewNotifications)
+                                <a href="{{ route('notifications.index') }}" class="dropdown-item" style="font-weight: var(--weight-semibold);">
+                                    <x-icon name="bell" class="icon-sm" />
+                                    {{ __('View all notifications') }}
                                 </a>
                             @endif
                         </div>
                     </div>
 
-                    <div class="dropdown" x-data="dropdown" @click.outside="open = false">
+                    <div class="dropdown" x-data="dropdown" @click.outside="open = false" :class="{ open: open }">
                         <button type="button" class="topbar-icon-btn" @click="toggle" aria-label="Account menu">
                             <x-avatar :initials="$user->initials()" size="sm" />
                         </button>
@@ -134,18 +188,18 @@
                             </div>
                             <a href="{{ route('profile.index') }}" class="dropdown-item">
                                 <x-icon name="user" class="icon-sm" />
-                                My Profile
+                                {{ __('My Profile') }}
                             </a>
                             <a href="{{ route('profile.security') }}" class="dropdown-item">
                                 <x-icon name="lock" class="icon-sm" />
-                                Change Password
+                                {{ __('Change Password') }}
                             </a>
                             <div class="dropdown-divider"></div>
                             <form method="POST" action="{{ route('auth.logout') }}">
                                 @csrf
                                 <button type="submit" class="dropdown-item danger">
                                     <x-icon name="log-out" class="icon-sm" />
-                                    Sign out
+                                    {{ __('Sign out') }}
                                 </button>
                             </form>
                         </div>
@@ -167,7 +221,7 @@
             </div>
 
             <footer style="padding: 0 var(--space-4) var(--space-4); text-align:center; font-size:var(--text-xs); color:var(--color-text-light);">
-                © {{ date('Y') }} {{ $appName }} · School Management System
+                © {{ date('Y') }} {{ $appName }} · {{ __('School Management System') }}
             </footer>
         </main>
     </div>

@@ -3,6 +3,7 @@
 namespace App\Domains\Accounts\Controllers\Auth;
 
 use App\Domains\Accounts\Requests\Auth\ResetPasswordRequest;
+use App\Domains\Accounts\Services\PasswordService;
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +26,7 @@ class ResetPasswordController extends Controller
         $status = Password::broker()->reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
-                $user->forceFill(['password' => $password])->save();
+                PasswordService::recordHistory($user, $password);
                 event(new PasswordReset($user));
             }
         );

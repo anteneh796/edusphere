@@ -6,7 +6,6 @@ use App\Domains\Academics\Models\AcademicYear;
 use App\Domains\Exams\Models\Exam;
 use App\Domains\Exams\Models\ExamResult;
 use App\Domains\Exams\Models\ExamSubject;
-use App\Support\GradeScale;
 
 class ExamsService
 {
@@ -68,15 +67,10 @@ class ExamsService
                 ? (float) $row['marks_obtained']
                 : null;
 
-            $percentage = $marks !== null && (float) $paper->max_marks > 0
-                ? ($marks / (float) $paper->max_marks) * 100
-                : null;
-
             ExamResult::updateOrCreate(
                 ['exam_subject_id' => $paper->getKey(), 'student_id' => $studentId],
                 [
                     'marks_obtained' => $marks,
-                    'grade' => $percentage !== null ? GradeScale::letter($percentage) : null,
                     'remarks' => ! empty($row['remarks']) ? $row['remarks'] : null,
                     'entered_by_id' => $enteredById,
                 ]
@@ -92,23 +86,25 @@ class ExamsService
     {
         $rows = $paper->results->filter(fn (ExamResult $result) => $result->marks_obtained !== null);
 
-        $percentages = $rows->map(fn (ExamResult $result) => $result->percentage() ?? 0);
+        $marks = $rows->map(fn (ExamResult $result) => (float) $result->marks_obtained);
 
         return [
             'total' => $rows->count(),
-            'average_percent' => $percentages->isNotEmpty() ? round($percentages->average(), 1) : 0,
+            'average' => $marks->isNotEmpty() ? round($marks->average(), 2) : null,
             'passing' => $rows->filter(
-                fn (ExamResult $result) => $result->percentage() !== null && GradeScale::passes($result->percentage())
+                fn (ExamResult $result) => (float) $result->marks_obtained >= (float) $paper->pass_marks
             )->count(),
             'failing' => $rows->filter(
-                fn (ExamResult $result) => $result->percentage() !== null && ! GradeScale::passes($result->percentage())
+                fn (ExamResult $result) => (float) $result->marks_obtained < (float) $paper->pass_marks
             )->count(),
-            'best' => $percentages->isNotEmpty() ? $percentages->max() : null,
+            'best' => $marks->isNotEmpty() ? $marks->max() : null,
         ];
     }
 
     /**
      * Aggregate performance for a student across the papers of one exam.
+     *
+     * @return array<string, mixed>
      */
     public function studentExamSummary(Exam $exam, int $studentId): array
     {
@@ -130,16 +126,17 @@ class ExamsService
             }
         }
 
-        $avgs = $rows->map(
-            fn (array $entry) => (float) $entry['result']->percentage()
-        );
+        $totalMax = $rows->sum(fn (array $entry) => (float) $entry['paper']->max_marks);
+        $totalObtained = $rows->sum(fn (array $entry) => (float) $entry['result']->marks_obtained);
 
         return [
             'papers' => $rows,
             'entered' => $rows->count(),
-            'average_percent' => $avgs->isNotEmpty() ? round($avgs->average(), 1) : null,
-            'grade' => $avgs->isNotEmpty() ? GradeScale::letter($avgs->average()) : null,
-            'passing' => $avgs->filter(fn ($p) => GradeScale::passes($p))->count(),
+            'total_obtained_marks' => round($totalObtained, 2),
+            'average_percent' => $totalMax > 0 ? round(($totalObtained / $totalMax) * 100, 2) : null,
+            'passing' => $rows->filter(
+                fn (array $entry) => (float) $entry['result']->marks_obtained >= (float) $entry['paper']->pass_marks
+            )->count(),
         ];
     }
 }

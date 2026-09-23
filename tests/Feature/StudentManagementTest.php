@@ -83,7 +83,8 @@ class StudentManagementTest extends TestCase
 
         $this->assertNotNull($student);
         $this->assertSame('new', $student->status);
-        $this->assertMatchesRegularExpression('/^ES-\d{2}-\d{4}$/', $student->student_number);
+        $this->assertMatchesRegularExpression('/^BMA\d{2}\d[A-Z]\d{3}$/', $student->student_number);
+        $this->assertSame('BMA265A001', $student->student_number);
         $this->assertSame($this->gradeId, $student->grade_level_id);
         $this->assertSame($this->classId, $student->class_room_id);
 

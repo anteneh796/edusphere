@@ -34,6 +34,8 @@
 .text-center { text-align: center; }
 .text-right { text-align: right; }
 .text-left { text-align: left; }
+.text-xs { font-size: var(--text-xs); }
+.text-light { color: var(--color-text-light); }
 .truncate {
     white-space: nowrap;
     overflow: hidden;

@@ -6,6 +6,7 @@ use App\Domains\Academics\Models\AcademicYear;
 use App\Domains\Academics\Models\ClassRoom;
 use App\Domains\Academics\Models\GradeLevel;
 use App\Support\HasUuid;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,7 +20,9 @@ class StudentEnrollment extends Model
         'academic_year_id',
         'grade_level_id',
         'class_room_id',
+        'roll_number',
         'status',
+        'result',
         'enrolled_at',
         'left_at',
         'notes',
@@ -30,7 +33,17 @@ class StudentEnrollment extends Model
         return [
             'enrolled_at' => 'date',
             'left_at' => 'date',
+            'roll_number' => 'integer',
         ];
+    }
+
+    public function scopeRollAssignable(Builder $query, string $classRoomId, string $academicYearId): Builder
+    {
+        return $query
+            ->where('class_room_id', $classRoomId)
+            ->where('academic_year_id', $academicYearId)
+            ->whereNotNull('roll_number')
+            ->orderByDesc('roll_number');
     }
 
     public function student(): BelongsTo

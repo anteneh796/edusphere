@@ -1,7 +1,7 @@
-<x-layouts.app :title="'My profile'">
-    <x-breadcrumb :items="[['label' => 'My profile']]" />
+<x-layouts.app :title="__('My profile')">
+    <x-breadcrumb :items="[['label' => __('My profile')]]" />
 
-    <x-page-header title="My profile" description="Update your personal information." />
+    <x-page-header :title="__('My profile')" :description="__('Update your personal information.')" />
 
     <div style="max-width: 720px;">
         <x-card>
@@ -10,17 +10,17 @@
                 @method('PUT')
 
                 <div class="grid grid-2" style="margin-bottom: var(--space-1);">
-                    <x-input name="first_name" label="First name" :value="$user->first_name" required />
-                    <x-input name="last_name" label="Last name" :value="$user->last_name" required />
+                    <x-input name="first_name" :label="__('First name')" :value="$user->first_name" required />
+                    <x-input name="last_name" :label="__('Last name')" :value="$user->last_name" required />
                 </div>
 
-                <x-input name="email" type="email" label="Email address" :value="$user->email" required />
-                <x-input name="phone" label="Phone number" :value="$user->phone" placeholder="+251 9xx xxx xxx" />
+                <x-input name="email" type="email" :label="__('Email address')" :value="$user->email" required />
+                <x-input name="phone" :label="__('Phone number')" :value="$user->phone" placeholder="+251 9xx xxx xxx" />
 
                 <div class="card-footer" style="margin-top: var(--space-3);">
                     <button type="submit" class="btn btn-primary">
                         <x-icon name="check" class="icon-sm" />
-                        Save profile
+                        {{ __('Save profile') }}
                     </button>
                 </div>
             </form>

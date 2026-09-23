@@ -4,10 +4,14 @@ namespace App\Domains\Students\Models;
 
 use App\Domains\Academics\Models\AcademicYear;
 use App\Domains\Academics\Models\ClassRoom;
+use App\Domains\Academics\Models\ClassSubject;
 use App\Domains\Academics\Models\GradeLevel;
 use App\Domains\Accounts\Models\User;
 use App\Domains\Attendance\Models\AttendanceRecord;
 use App\Domains\Exams\Models\ExamResult;
+use App\Domains\Finance\Models\Invoice;
+use App\Domains\Finance\Models\Payment;
+use App\Support\Enums\AttendanceStatus;
 use App\Support\Enums\StudentStatus;
 use App\Support\HasUuid;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +20,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Student extends Model
@@ -29,6 +34,7 @@ class Student extends Model
         'other_names',
         'gender',
         'date_of_birth',
+        'place_of_birth',
         'photo_path',
         'national_id',
         'status',
@@ -104,7 +110,10 @@ class Student extends Model
 
     public function guardians(): BelongsToMany
     {
-        return $this->belongsToMany(Guardian::class)->withTimestamps()->withPivot('is_primary');
+        return $this->belongsToMany(Guardian::class)
+            ->using(GuardianStudentPivot::class)
+            ->withTimestamps()
+            ->withPivot('is_primary', 'permissions');
     }
 
     public function primaryGuardian(): BelongsTo
@@ -112,9 +121,22 @@ class Student extends Model
         return $this->belongsTo(Guardian::class, 'guardian_id');
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     public function enrollments(): HasMany
     {
-        return $this->hasMany(StudentEnrollment::class)->latest('academic_year_id');
+        return $this->hasMany(StudentEnrollment::class)
+            ->orderByDesc(StudentEnrollment::select('start_date')
+                ->from('academic_years')
+                ->whereColumn('academic_years.id', 'student_enrollments.academic_year_id'));
     }
 
     public function attendanceRecords()
@@ -127,9 +149,104 @@ class Student extends Model
         return $this->hasMany(ExamResult::class);
     }
 
+    public function latestResult(): HasOne
+    {
+        return $this->hasOne(ExamResult::class)->latestOfMany('created_at');
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function emergencyContacts(): HasMany
+    {
+        return $this->hasMany(EmergencyContact::class)->orderBy('priority');
+    }
+
+    public function medicalRecord(): HasOne
+    {
+        return $this->hasOne(StudentMedicalRecord::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(StudentDocument::class)->latest();
+    }
+
+    public function transfers(): HasMany
+    {
+        return $this->hasMany(StudentTransfer::class)->latest('transfer_date');
+    }
+
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(StudentStatusHistory::class)->latest();
+    }
+
+    public function timeline(): HasMany
+    {
+        return $this->hasMany(StudentTimeline::class)->oldest('event_date');
+    }
+
+    public function activeEnrollment(): ?StudentEnrollment
+    {
+        return $this->enrollments()
+            ->where('status', 'active')
+            ->with('academicYear')
+            ->get()
+            ->sortByDesc(fn (StudentEnrollment $enrollment) => $enrollment->academicYear?->start_date)
+            ->first();
+    }
+
+    public function attendancePercentage(): ?float
+    {
+        $total = $this->attendanceRecords()->count();
+
+        if ($total === 0) {
+            return null;
+        }
+
+        $attended = $this->attendanceRecords()
+            ->whereIn('status', [
+                AttendanceStatus::Present->value,
+                AttendanceStatus::Late->value,
+                AttendanceStatus::Excused->value,
+            ])
+            ->count();
+
+        return round(($attended / $total) * 100, 1);
+    }
+
+    public function homeroomTeacher(): ?User
+    {
+        return ClassSubject::query()
+            ->where('class_room_id', $this->class_room_id)
+            ->where('is_homeroom', true)
+            ->with('teacher')
+            ->first()?->teacher;
+    }
+
+    /* --------------------------------- Finance -------------------------------- */
+
+    public function getFeeBilledAttribute(): float
+    {
+        return round((float) $this->invoices()->sum('amount'), 2);
+    }
+
+    public function getFeePaidAttribute(): float
+    {
+        return round((float) $this->payments()->confirmed()->sum('amount'), 2);
+    }
+
+    public function getFeeBalanceAttribute(): float
+    {
+        return round(max(0, $this->fee_billed - $this->fee_paid), 2);
+    }
+
+    public function getLastPaymentAmountAttribute(): float
+    {
+        return round((float) ($this->payments()->confirmed()->latest('paid_at')->value('amount') ?? 0), 2);
     }
 
     /* --------------------------------- Scopes ---------------------------------- */
@@ -149,7 +266,11 @@ class Student extends Model
             $q->where('student_number', 'like', "%{$term}%")
                 ->orWhere('first_name', 'like', "%{$term}%")
                 ->orWhere('last_name', 'like', "%{$term}%")
-                ->orWhere('other_names', 'like', "%{$term}%");
+                ->orWhere('other_names', 'like', "%{$term}%")
+                ->orWhere('national_id', 'like', "%{$term}%")
+                ->orWhereHas('guardians', fn (Builder $guardian) => $guardian
+                    ->where('phone', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%"));
         });
     }
 }

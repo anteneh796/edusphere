@@ -9,6 +9,7 @@ use App\Support\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AttendanceRecord extends Model
 {
@@ -54,5 +55,10 @@ class AttendanceRecord extends Model
     public function markedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'marked_by_id');
+    }
+
+    public function corrections(): HasMany
+    {
+        return $this->hasMany(AttendanceCorrection::class, 'attendance_record_id');
     }
 }

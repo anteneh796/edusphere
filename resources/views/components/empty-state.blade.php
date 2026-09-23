@@ -1,7 +1,7 @@
 @props([
     'icon' => 'file-text',
-    'title' => 'Nothing here yet',
-    'message' => 'No records have been found.',
+    'title' => __('Nothing here yet'),
+    'message' => __('No records have been found.'),
 ])
 
 <div {{ $attributes->merge(['class' => 'empty-state']) }}>

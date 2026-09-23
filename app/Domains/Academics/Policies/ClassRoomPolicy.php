@@ -4,17 +4,12 @@ namespace App\Domains\Academics\Policies;
 
 use App\Domains\Academics\Models\ClassRoom;
 use App\Domains\Accounts\Models\User;
-use App\Support\Enums\RoleName;
 
 class ClassRoomPolicy
 {
     public function viewAny(?User $user): bool
     {
-        return $user && ($user->hasRole([
-            RoleName::SuperAdmin->value,
-            RoleName::Principal->value,
-            RoleName::Registrar->value,
-        ]));
+        return (bool) $user?->hasPermission('academics.view');
     }
 
     public function view(?User $user, ClassRoom $classRoom): bool
@@ -24,20 +19,17 @@ class ClassRoomPolicy
 
     public function create(?User $user): bool
     {
-        return $user && ($user->hasRole([
-            RoleName::SuperAdmin->value,
-            RoleName::Principal->value,
-        ]));
+        return (bool) $user?->hasPermission('academics.create');
     }
 
     public function update(?User $user, ClassRoom $classRoom): bool
     {
-        return $this->create($user);
+        return (bool) $user?->hasPermission('academics.edit');
     }
 
     public function delete(?User $user, ClassRoom $classRoom): bool
     {
-        if (! $this->create($user)) {
+        if (! $user?->hasPermission('academics.delete')) {
             return false;
         }
 

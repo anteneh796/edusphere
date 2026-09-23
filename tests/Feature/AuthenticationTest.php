@@ -18,6 +18,8 @@ class AuthenticationTest extends TestCase
         Role::create(['name' => RoleName::SuperAdmin->value, 'label' => 'Super Admin']);
         Role::create(['name' => RoleName::Teacher->value, 'label' => 'Teacher']);
         Role::create(['name' => RoleName::Principal->value, 'label' => 'Principal']);
+        Role::create(['name' => RoleName::Student->value, 'label' => 'Student']);
+        Role::create(['name' => RoleName::Parent->value, 'label' => 'Parent']);
 
         $admin = User::factory()->create([
             'email' => 'admin@edusphere.com',
@@ -45,11 +47,112 @@ class AuthenticationTest extends TestCase
         $this->seedUsers();
 
         $this->post(route('auth.authenticate'), [
-            'email' => 'admin@edusphere.com',
+            'login' => 'admin@edusphere.com',
             'password' => 'Admin@2026',
         ])->assertRedirect(route('dashboard'));
 
         $this->assertAuthenticated();
+    }
+
+    public function test_valid_credentials_with_remember_me_redirect_to_dashboard(): void
+    {
+        $this->seedUsers();
+
+        $this->post(route('auth.authenticate'), [
+            'login' => 'admin@edusphere.com',
+            'password' => 'Admin@2026',
+            'remember' => '1',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticated();
+    }
+
+    public function test_student_login_redirects_to_student_portal(): void
+    {
+        $this->seedUsers();
+
+        $student = User::factory()->create([
+            'email' => 'student@edusphere.com',
+            'password' => 'Dev@2026',
+        ]);
+        $student->roles()->attach(Role::where('name', RoleName::Student->value)->first());
+
+        $this->post(route('auth.authenticate'), [
+            'login' => 'student@edusphere.com',
+            'password' => 'Dev@2026',
+        ])->assertRedirect(route('cms.student.dashboard'));
+
+        $this->assertAuthenticated();
+    }
+
+    public function test_parent_login_redirects_to_parent_portal(): void
+    {
+        $this->seedUsers();
+
+        $parent = User::factory()->create([
+            'email' => 'parent@edusphere.com',
+            'password' => 'Dev@2026',
+        ]);
+        $parent->roles()->attach(Role::where('name', RoleName::Parent->value)->first());
+
+        $this->post(route('auth.authenticate'), [
+            'login' => 'parent@edusphere.com',
+            'password' => 'Dev@2026',
+        ])->assertRedirect(route('cms.parent.dashboard'));
+
+        $this->assertAuthenticated();
+    }
+
+    public function test_student_hitting_dashboard_redirects_to_student_portal(): void
+    {
+        $this->seedUsers();
+
+        $student = User::factory()->create();
+        $student->roles()->attach(Role::where('name', RoleName::Student->value)->first());
+
+        $this->actingAs($student)
+            ->get(route('dashboard'))
+            ->assertRedirect(route('cms.student.dashboard'));
+    }
+
+    public function test_student_portal_pages_render(): void
+    {
+        $this->seedUsers();
+
+        $student = User::factory()->create();
+        $student->roles()->attach(Role::where('name', RoleName::Student->value)->first());
+
+        $this->actingAs($student)
+            ->get(route('cms.student.dashboard'))
+            ->assertOk();
+
+        $this->actingAs($student)
+            ->get(route('cms.student.attendance'))
+            ->assertOk();
+
+        $this->actingAs($student)
+            ->get(route('cms.student.results'))
+            ->assertOk();
+
+        $this->actingAs($student)
+            ->get(route('cms.student.profile'))
+            ->assertOk();
+    }
+
+    public function test_parent_portal_pages_render(): void
+    {
+        $this->seedUsers();
+
+        $parent = User::factory()->create();
+        $parent->roles()->attach(Role::where('name', RoleName::Parent->value)->first());
+
+        $this->actingAs($parent)
+            ->get(route('cms.parent.dashboard'))
+            ->assertOk();
+
+        $this->actingAs($parent)
+            ->get(route('cms.parent.billing'))
+            ->assertOk();
     }
 
     public function test_invalid_credentials_are_rejected(): void
@@ -57,9 +160,9 @@ class AuthenticationTest extends TestCase
         $this->seedUsers();
 
         $this->post(route('auth.authenticate'), [
-            'email' => 'admin@edusphere.com',
+            'login' => 'admin@edusphere.com',
             'password' => 'wrong-password',
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('login');
 
         $this->assertGuest();
     }
@@ -72,9 +175,9 @@ class AuthenticationTest extends TestCase
         $suspended->roles()->attach(Role::where('name', RoleName::Teacher->value)->first());
 
         $this->post(route('auth.authenticate'), [
-            'email' => $suspended->email,
+            'login' => $suspended->email,
             'password' => 'password',
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('login');
 
         $this->assertGuest();
     }

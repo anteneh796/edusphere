@@ -20,28 +20,39 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
+    <div class="lang-switch auth-lang-switch" x-data="{ langOpen: false }" @click.outside="langOpen = false">
+        <button type="button" class="lang-toggle" @click="langOpen = !langOpen" aria-label="{{ __('Switch language') }}">
+            <x-icon name="languages" />
+            <span>{{ app()->getLocale() === 'am' ? 'አማርኛ' : 'English' }}</span>
+            <x-icon name="chevron-down" />
+        </button>
+        <div class="lang-menu" x-show="langOpen" x-cloak x-transition>
+            <a href="{{ route('public.locale', 'en') }}" class="{{ app()->getLocale() === 'en' ? 'active' : '' }}">English</a>
+            <a href="{{ route('public.locale', 'am') }}" class="{{ app()->getLocale() === 'am' ? 'active' : '' }}">አማርኛ</a>
+        </div>
+    </div>
+
     <div class="auth-layout">
         <div class="auth-panel">
             <div class="auth-brand">
                 <div class="auth-logo">E</div>
-                <h1 style="font-size: var(--text-2xl);">Welcome back to <br><span class="text-primary">EduSphere</span></h1>
+                <h1 style="font-size: var(--text-2xl);">{{ __('Welcome back to') }} <br><span class="text-primary">EduSphere</span></h1>
                 <p class="text-muted mt-2" style="font-size: var(--text-sm);">
-                    One platform to manage your entire school — students, classes, attendance,
-                    examinations, fees and reports.
+                    {{ __('One platform to manage your entire school — students, classes, attendance, examinations, fees and reports.') }}
                 </p>
 
                 <div class="auth-stat-grid">
                     <div class="auth-stat">
                         <b>1K+</b>
-                        <span>Schools</span>
+                        <span>{{ __('Schools') }}</span>
                     </div>
                     <div class="auth-stat">
                         <b>50K+</b>
-                        <span>Students</span>
+                        <span>{{ __('Students') }}</span>
                     </div>
                     <div class="auth-stat">
                         <b>24/7</b>
-                        <span>Support</span>
+                        <span>{{ __('Support') }}</span>
                     </div>
                 </div>
             </div>

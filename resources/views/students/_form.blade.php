@@ -21,11 +21,22 @@
         <x-input name="other_names" label="Other names" :value="old('other_names', $editing ? $student->other_names : null)" placeholder="Optional middle names" />
         <x-select name="gender" label="Gender" :options="$genderOptions" :value="old('gender', $editing ? $student->gender : null)" placeholder="Select gender…" required />
         <x-input name="date_of_birth" type="date" label="Date of birth" :value="old('date_of_birth', $editing ? optional($student->date_of_birth)->format('Y-m-d') : null)" required />
-        <x-input name="national_id" label="National ID" :value="old('national_id', $editing ? $student->national_id : null)" placeholder="Optional" />
+        <x-input name="place_of_birth" label="Place of birth" :value="old('place_of_birth', $editing ? $student->place_of_birth : null)" placeholder="e.g. Addis Ababa" />
+        <x-input name="national_id" label="National ID (FAN / FIN)" :value="old('national_id', $editing ? $student->national_id : null)" placeholder="Optional" />
         <x-input name="enrollment_date" type="date" label="Enrollment date" :value="old('enrollment_date', $editing ? optional($student->enrollment_date)->format('Y-m-d') : date('Y-m-d'))" required />
         <x-input name="previous_school" label="Previous school" :value="old('previous_school', $editing ? $student->previous_school : null)" placeholder="Optional" />
         <x-input name="address" label="Address" :value="old('address', $editing ? $student->address : null)" placeholder="City, sub-city…" />
         <x-input name="health_notes" label="Health notes" :value="old('health_notes', $editing ? $student->health_notes : null)" placeholder="Allergies, conditions…" />
+        <div class="form-group" style="grid-column: 1 / -1;">
+            <label class="form-label" for="photo">Profile photo</label>
+            <input id="photo" name="photo" type="file" accept="image/*" class="form-select" />
+            @if ($editing && $student->photo_path)
+                <div class="form-hint">Current photo saved. Upload a new one to replace it.</div>
+            @endif
+            @error('photo')
+                <div class="form-error"><x-icon name="alert-circle" class="icon-sm" />{{ $message }}</div>
+            @enderror
+        </div>
     </div>
 
     @if ($editing)

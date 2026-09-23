@@ -21,31 +21,35 @@ class LoginController extends Controller
 
     public function authenticate(LoginRequest $request): RedirectResponse
     {
-        $email = strtolower($request->input('email', ''));
-        $key = 'login:'.$email;
+        $identifier = trim((string) $request->input('login', ''));
+        $key = 'login:'.strtolower($identifier);
 
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
 
             return back()
-                ->withErrors(['email' => "Too many attempts. Please try again in {$seconds} seconds."])
-                ->onlyInput('email');
+                ->withErrors(['login' => "Too many attempts. Please try again in {$seconds} seconds."])
+                ->onlyInput('login');
         }
 
         try {
-            $this->authService->login($request->validated(), (bool) $request->boolean('remember'));
+            $user = $this->authService->login($identifier, (string) $request->input('password'), (bool) $request->boolean('remember'));
         } catch (Throwable $e) {
             RateLimiter::hit($key, 60);
 
             return back()
-                ->withErrors(['email' => $e->getMessage()])
-                ->onlyInput('email');
+                ->withErrors(['login' => $e->getMessage()])
+                ->onlyInput('login');
         }
 
         RateLimiter::clear($key);
-        $request->session()->regenerate();
 
-        $role = auth()->user()?->roles?->first()?->name;
+        if ($user->requiresPasswordChange()) {
+            return redirect()->route('profile.security')
+                ->with('status', __('For security, please set a new password before continuing.'));
+        }
+
+        $role = $user->roles?->first()?->name;
         $home = match ($role) {
             'student' => route('cms.student.dashboard'),
             'parent' => route('cms.parent.dashboard'),

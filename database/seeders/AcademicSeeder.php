@@ -36,29 +36,33 @@ class AcademicSeeder extends Seeder
     private function seedGrades(): void
     {
         $levels = [
-            'KG1' => 'Kindergarten 1',
-            'KG2' => 'Kindergarten 2',
-            '1' => 'Grade 1',
-            '2' => 'Grade 2',
-            '3' => 'Grade 3',
-            '4' => 'Grade 4',
-            '5' => 'Grade 5',
-            '6' => 'Grade 6',
-            '7' => 'Grade 7',
-            '8' => 'Grade 8',
-            '9' => 'Grade 9',
-            '10' => 'Grade 10',
-            '11' => 'Grade 11',
-            '12' => 'Grade 12',
+            'KG1' => ['name' => 'Kindergarten 1', 'stage' => 'kindergarten'],
+            'KG2' => ['name' => 'Kindergarten 2', 'stage' => 'kindergarten'],
+            '1' => ['name' => 'Grade 1', 'stage' => 'lower_primary'],
+            '2' => ['name' => 'Grade 2', 'stage' => 'lower_primary'],
+            '3' => ['name' => 'Grade 3', 'stage' => 'lower_primary'],
+            '4' => ['name' => 'Grade 4', 'stage' => 'lower_primary'],
+            '5' => ['name' => 'Grade 5', 'stage' => 'upper_primary'],
+            '6' => ['name' => 'Grade 6', 'stage' => 'upper_primary'],
+            '7' => ['name' => 'Grade 7', 'stage' => 'upper_primary'],
+            '8' => ['name' => 'Grade 8', 'stage' => 'upper_primary'],
+            '9' => ['name' => 'Grade 9', 'stage' => null],
+            '10' => ['name' => 'Grade 10', 'stage' => null],
+            '11' => ['name' => 'Grade 11', 'stage' => null],
+            '12' => ['name' => 'Grade 12', 'stage' => null],
         ];
 
         $order = 0;
-        foreach ($levels as $code => $name) {
-            GradeLevel::create([
-                'name' => $name,
-                'code' => $code,
-                'sort_order' => ++$order,
-            ]);
+        foreach ($levels as $code => $level) {
+            GradeLevel::updateOrCreate(
+                ['code' => $code],
+                [
+                    'name' => $level['name'],
+                    'stage' => $level['stage'],
+                    'is_active' => $level['stage'] !== null,
+                    'sort_order' => ++$order,
+                ]
+            );
         }
     }
 
@@ -97,7 +101,7 @@ class AcademicSeeder extends Seeder
     private function seedClasses(): void
     {
         $currentYear = AcademicYear::where('is_current', true)->first();
-        $grades = GradeLevel::ordered()->get();
+        $grades = GradeLevel::ordered()->active()->get();
 
         foreach ($grades as $grade) {
             $code = $grade->code;

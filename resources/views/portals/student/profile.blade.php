@@ -1,51 +1,51 @@
-<x-layouts.app :title="'My profile'">
-    <x-page-header title="My profile" description="Your personal and enrollment details as recorded by the school.">
-        <a href="{{ route('portals.student.dashboard') }}" class="btn btn-ghost">
+<x-layouts.app :title="__('My profile')">
+    <x-page-header :title="__('My profile')" :description="__('Your personal and enrollment details as recorded by the school.')">
+        <a href="{{ route('cms.student.dashboard') }}" class="btn btn-ghost">
             <x-icon name="arrow-left" class="icon-sm" />
-            Dashboard
+            {{ __('Dashboard') }}
         </a>
     </x-page-header>
 
-    <x-card title="Identity">
+    <x-card :title="__('Identity')">
         <div class="profile-head">
-            <x-avatar :initials="\Illuminate\Support\Str::of($student->first_name ?? 'S')->substr(0,1)\n  ->append(\Illuminate\Support\Str::of($student->last_name ?? 'T')->substr(0,1))" size="lg" />
+            <x-avatar :initials="Str::of(($student->first_name ?? 'S'))->substr(0, 1)->append(Str::of(($student->last_name ?? 'T'))->substr(0, 1))" size="lg" />
             <div class="profile-head-body">
-                <div class="text-lg-semibold">{{ $student?->full_name ?? 'Student' }}</div>
+                <div class="text-lg-semibold">{{ $student?->full_name ?? __('Student') }}</div>
                 <div class="text-xs text-light">{{ $student?->student_number ?? '—' }}</div>
             </div>
         </div>
 
         <dl class="detail-grid">
             <div class="detail-row">
-                <dt>First name</dt>
+                <dt>{{ __('First name') }}</dt>
                 <dd>{{ $student?->first_name ?? '—' }}</dd>
             </div>
             <div class="detail-row">
-                <dt>Last name</dt>
+                <dt>{{ __('Last name') }}</dt>
                 <dd>{{ $student?->last_name ?? '—' }}</dd>
             </div>
             <div class="detail-row">
-                <dt>Other names</dt>
+                <dt>{{ __('Other names') }}</dt>
                 <dd>{{ $student?->other_names ?? '—' }}</dd>
             </div>
             <div class="detail-row">
-                <dt>Gender</dt>
+                <dt>{{ __('Gender') }}</dt>
                 <dd>{{ ucfirst((string) ($student?->gender ?? '—')) }}</dd>
             </div>
             <div class="detail-row">
-                <dt>Date of birth</dt>
+                <dt>{{ __('Date of birth') }}</dt>
                 <dd>{{ $student?->date_of_birth?->format('M j, Y') ?? '—' }}</dd>
             </div>
             <div class="detail-row">
-                <dt>Student number</dt>
+                <dt>{{ __('Student number') }}</dt>
                 <dd>{{ $student?->student_number ?? '—' }}</dd>
             </div>
             <div class="detail-row">
-                <dt>Class</dt>
+                <dt>{{ __('Class') }}</dt>
                 <dd>{{ $student?->classRoom?->name ?? '—' }}</dd>
             </div>
             <div class="detail-row">
-                <dt>Enrolled date</dt>
+                <dt>{{ __('Enrolled date') }}</dt>
                 <dd>{{ $student?->enrollment_date?->format('M j, Y') ?? '—' }}</dd>
             </div>
         </dl>

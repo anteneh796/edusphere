@@ -1,16 +1,14 @@
-<!-- 404 -->
-<x-layouts.auth :title="'Page not found'">
-    <div style="text-align:center; padding: var(--space-5) 0;">
-        <div class="empty-state-icon" style="margin: 0 auto var(--space-3); background: var(--color-warning-soft); color: var(--color-warning);">
-            <x-icon name="compass" class="icon-lg" />
+<x-layouts.public title="Page not found" description="The page you are looking for does not exist or has been moved.">
+    <section class="public-error">
+        <div class="public-error-inner">
+            <p class="public-error-code">404</p>
+            <div class="public-error-icon"><x-icon name="compass" /></div>
+            <h1>Page not found</h1>
+            <p>The page you are looking for does not exist or has been moved. Let's get you back on track.</p>
+            <div class="public-error-actions">
+                <a href="{{ route('public.home') }}" class="btn btn-primary">Back to homepage</a>
+                <a href="{{ route('public.contact') }}" class="btn btn-outline">Contact us</a>
+            </div>
         </div>
-        <h1 style="font-size: 56px; line-height:1; letter-spacing:-0.03em;">404</h1>
-        <p class="text-muted mt-2">The page you are looking for does not exist or has been moved.</p>
-        <div class="mt-4">
-            <a href="{{ auth()->check() ? route('dashboard') : route('auth.login') }}" class="btn btn-primary">
-                <x-icon name="arrow-left" class="icon-sm" />
-                Back to {{ auth()->check() ? 'dashboard' : 'login' }}
-            </a>
-        </div>
-    </div>
-</x-layouts.auth>
+    </section>
+</x-layouts.public>

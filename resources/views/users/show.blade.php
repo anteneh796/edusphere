@@ -44,6 +44,22 @@
                     <dd class="font-semibold">{{ $user->phone ?? '—' }}</dd>
                 </div>
                 <div>
+                    <dt class="text-xs text-muted">Username</dt>
+                    <dd class="font-semibold">{{ $user->username ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs text-muted">Employee ID</dt>
+                    <dd class="font-semibold">{{ $user->employee_id ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs text-muted">Student number</dt>
+                    <dd class="font-semibold">{{ $user->student_number ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs text-muted">Last sign-in</dt>
+                    <dd class="font-semibold">{{ $user->last_login_at?->diffForHumans() ?? 'Never' }}</dd>
+                </div>
+                <div>
                     <dt class="text-xs text-muted">Status</dt>
                     <dd>
                         <x-badge :color="match ($user->status) { 'active' => 'success', 'inactive' => 'warning', 'suspended' => 'danger', default => 'neutral' }" :dot="true">
@@ -83,4 +99,24 @@
             </div>
         </x-card>
     </div>
+
+    @can('update', $user)
+        <x-card title="Reset password" class="mt-2">
+            <p class="text-sm text-muted mb-2">
+                Resetting the password signs the user out everywhere and requires them to set a new
+                password on their next sign-in. Leave the field blank to generate a random one.
+            </p>
+            <form method="POST" action="{{ route('users.reset-password', $user) }}" class="grid-2" style="align-items: end;">
+                @csrf
+                <div class="flex flex-col" style="gap: var(--space-2);">
+                    <x-input name="password" type="password" label="New password (optional)" :placeholder="'Leave blank to generate'" autocomplete="off" />
+                    <x-input name="password_confirmation" type="password" label="Confirm password" autocomplete="off" />
+                </div>
+                <button type="submit" class="btn btn-outline-danger">
+                    <x-icon name="refresh" class="icon-sm" />
+                    Reset password
+                </button>
+            </form>
+        </x-card>
+    @endcan
 </x-layouts.app>

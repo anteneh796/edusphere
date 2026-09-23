@@ -1,14 +1,14 @@
-<x-layouts.app :title="'My results'">
+<x-layouts.app :title="__('My results')">
     <x-page-header
-        title="My exam results"
-        description="Your published exam results, most recent first.">
-        <a href="{{ route('portals.student.dashboard') }}" class="btn btn-ghost">
+        :title="__('My exam results')"
+        :description="__('Your published exam results, most recent first.')">
+        <a href="{{ route('cms.student.dashboard') }}" class="btn btn-ghost">
             <x-icon name="arrow-left" class="icon-sm" />
-            Dashboard
+            {{ __('Dashboard') }}
         </a>
     </x-page-header>
 
-    <x-card title="Results">
+    <x-card :title="__('Results')">
         @forelse ($results as $result)
             <div class="list-row">
                 <x-icon name="award" class="icon-md text-light" />
@@ -25,7 +25,7 @@
                 </div>
             </div>
         @empty
-            <x-empty-state icon="award" title="No results published yet" message="Your results will appear here once your exams have been published." />
+            <x-empty-state icon="award" :title="__('No results published yet')" :message="__('Your results will appear here once your exams have been published.')" />
         @endforelse
     </x-card>
 </x-layouts.app>

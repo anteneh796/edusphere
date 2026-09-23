@@ -1,5 +1,5 @@
 @props([
-    'cancelText' => 'Cancel',
+    'cancelText' => __('Cancel'),
 ])
 
 <div x-data x-show="$store.confirm.open"

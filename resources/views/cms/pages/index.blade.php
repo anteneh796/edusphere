@@ -1,18 +1,18 @@
-<x-layouts.app title="Website pages">
+<x-layouts.app :title="__('Website pages')">
     <x-page-header
-        title="Website pages"
-        description="Manage the content shown on the public website. Pages are served at their own URLs (e.g. /about) and the home welcome text.">
+        :title="__('Website pages')"
+        :description="__('Manage the content shown on the public website. Pages are served at their own URLs (e.g. /about) and the home welcome text.')">
         <a href="{{ route('public.home') }}" class="btn btn-outline">
             <x-icon name="external" class="icon-sm" />
-            View public site
+            {{ __('View public site') }}
         </a>
     </x-page-header>
 
-    <x-card title="Pages" subtitle="System pages — update their copy, then save.">
+    <x-card :title="__('Pages')" :subtitle="__('System pages — update their copy, then save.')">
         <x-slot name="actions">
             <div class="field-filter">
                 <form method="GET" action="{{ route('cms.pages.index') }}">
-                    <x-input name="q" placeholder="Search pages…" :value="request('q')" class="input-sm" style="width:200px;" />
+                    <x-input name="q" :placeholder="__('Search pages…')" :value="request('q')" class="input-sm" style="width:200px;" />
                 </form>
             </div>
         </x-slot>
@@ -28,24 +28,24 @@
                 </div>
                 <div style="display:flex; align-items:center; gap: var(--space-1);">
                     @if ($page->deleted_at)
-                        <span class="badge badge-neutral">deleted</span>
+                        <span class="badge badge-neutral">{{ __('deleted') }}</span>
                     @else
-                        <span class="badge {{ $page->published ? 'badge-success' : 'badge-warning' }}">{{ $page->published ? 'published' : 'draft' }}</span>
+                        <span class="badge {{ $page->published ? 'badge-success' : 'badge-warning' }}">{{ $page->published ? __('published') : __('draft') }}</span>
                     @endif
-                    <a href="{{ $page->url() }}" target="_blank" class="btn btn-ghost btn-sm" title="Preview">
+                    <a href="{{ $page->url() }}" target="_blank" class="btn btn-ghost btn-sm" :title="__('Preview')">
                         <x-icon name="eye" class="icon-sm" />
                     </a>
                     <a href="{{ route('cms.pages.edit', $page) }}" class="btn btn-ghost btn-sm">
                         <x-icon name="pencil" class="icon-sm" />
-                        Edit
+                        {{ __('Edit') }}
                     </a>
                 </div>
             </div>
         @empty
             <div class="empty-state">
                 <x-icon name="file-text" class="icon-lg" />
-                <h3>No pages yet</h3>
-                <p>Pages are created by the seeding process. Run <code>php artisan db:seed</code> to install the default content.</p>
+                <h3>{{ __('No pages yet') }}</h3>
+                <p>{{ __('Pages are created by the seeding process. Run :command to install the default content.', ['command' => '<code>php artisan db:seed</code>']) }}</p>
             </div>
         @endforelse
     </x-card>

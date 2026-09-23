@@ -1,22 +1,22 @@
-<x-layouts.app :title="'Users & Roles'">
+<x-layouts.app :title="__('Users & Roles')">
 
-    <x-page-header title="Users & Roles" description="Manage staff, teachers and account access across the school.">
+    <x-page-header :title="__('Users & Roles')" :description="__('Manage staff, teachers and account access across the school.')">
         <a href="{{ route('users.create') }}" class="btn btn-primary">
             <x-icon name="user-plus" class="icon-sm" />
-            Add User
+            {{ __('Add User') }}
         </a>
     </x-page-header>
 
     <x-card>
         <form method="GET" action="{{ route('users.index') }}" class="grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-2); align-items:end; padding: var(--space-3);">
             <div class="form-group" style="margin:0;">
-                <label class="form-label" for="q">Search</label>
-                <input type="search" id="q" name="q" value="{{ request('q') }}" placeholder="Name, email or phone…" class="form-control" />
+                <label class="form-label" for="q">{{ __('Search') }}</label>
+                <input type="search" id="q" name="q" value="{{ request('q') }}" :placeholder="__('Name, email or phone…')" class="form-control" />
             </div>
             <div class="form-group" style="margin:0;">
-                <label class="form-label" for="role-filter">Role</label>
+                <label class="form-label" for="role-filter">{{ __('Role') }}</label>
                 <select id="role-filter" name="role" class="form-select">
-                    <option value="">All roles</option>
+                    <option value="">{{ __('All roles') }}</option>
                     @foreach ($roles as $role)
                         <option value="{{ $role->name }}" @selected(request('role') === $role->name)>{{ $role->label }}</option>
                     @endforeach
@@ -25,10 +25,10 @@
             <div class="flex gap-1" style="align-items:end;">
                 <button type="submit" class="btn btn-primary">
                     <x-icon name="search" class="icon-sm" />
-                    Filter
+                    {{ __('Filter') }}
                 </button>
                 @if (request('q') || request('role') || request('status'))
-                    <a href="{{ route('users.index') }}" class="btn btn-secondary">Clear</a>
+                    <a href="{{ route('users.index') }}" class="btn btn-secondary">{{ __('Clear') }}</a>
                 @endif
             </div>
         </form>
@@ -37,11 +37,11 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>User</th>
-                        <th>Roles</th>
-                        <th>Contact</th>
-                        <th>Status</th>
-                        <th class="text-right">Actions</th>
+                        <th>{{ __('User') }}</th>
+                        <th>{{ __('Roles') }}</th>
+                        <th>{{ __('Contact') }}</th>
+                        <th>{{ __('Status') }}</th>
+                        <th class="text-right">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -62,10 +62,14 @@
                                         @php
                                             $colors = [
                                                 'super_admin' => 'accent',
+                                                'school_admin' => 'accent',
                                                 'principal' => 'primary',
+                                                'vice_principal' => 'primary',
                                                 'registrar' => 'info',
                                                 'teacher' => 'accent',
-                                                'accountant' => 'success',
+                                                'finance_officer' => 'success',
+                                                'hr_officer' => 'info',
+                                                'reception' => 'neutral',
                                                 'parent' => 'neutral',
                                                 'student' => 'neutral',
                                             ];
@@ -83,21 +87,21 @@
                                 </x-badge>
                             </td>
                             <td class="actions-cell">
-                                <a href="{{ route('users.show', $user) }}" class="btn btn-ghost btn-sm btn-icon" title="View">
+                                <a href="{{ route('users.show', $user) }}" class="btn btn-ghost btn-sm btn-icon" :title="__('View')">
                                     <x-icon name="eye" class="icon-sm" />
                                 </a>
-                                <a href="{{ route('users.edit', $user) }}" class="btn btn-ghost btn-sm btn-icon" title="Edit">
+                                <a href="{{ route('users.edit', $user) }}" class="btn btn-ghost btn-sm btn-icon" :title="__('Edit')">
                                     <x-icon name="pencil" class="icon-sm" />
                                 </a>
                                 @can('delete', $user)
                                     <button type="button" class="btn btn-ghost btn-sm btn-icon text-danger"
-                                        title="Delete"
+                                        :title="__('Delete')"
                                         @click="$store.confirm.ask({
-                                            title: 'Delete user?',
-                                            message: `Delete ${@js($user->full_name)}. This cannot be undone.`,
+                                            title: @js(__('Delete user?')),
+                                            message: @js(__('Delete').' '.$user->full_name.'. '.__('This cannot be undone.')),
                                             action: @js(route('users.destroy', $user)),
                                             method: 'DELETE',
-                                            confirmText: 'Delete'
+                                            confirmText: @js(__('Delete'))
                                         })">
                                         <x-icon name="trash" class="icon-sm" />
                                     </button>
@@ -107,8 +111,8 @@
                     @empty
                         <tr>
                             <td colspan="5">
-                                <x-empty-state icon="users" title="No users found" message="Try adjusting your filters or add a new user.">
-                                    <a href="{{ route('users.create') }}" class="btn btn-primary btn-sm">Add User</a>
+                                <x-empty-state icon="users" :title="__('No users found')" :message="__('Try adjusting your filters or add a new user.')">
+                                    <a href="{{ route('users.create') }}" class="btn btn-primary btn-sm">{{ __('Add User') }}</a>
                                 </x-empty-state>
                             </td>
                         </tr>

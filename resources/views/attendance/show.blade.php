@@ -14,12 +14,26 @@
         :description="($classLabel ? $classLabel . ' · ' : '') . 'daily attendance for ' . $session->date->format('D, M j, Y')">
         <span style="display:inline-flex; align-items:center; gap: var(--space-2); flex-wrap:wrap;">
             <x-badge :color="$session->status?->badgeColor()" :dot="true">{{ $session->status?->label() }}</x-badge>
+            @if ($session->isLocked())
+                <x-badge color="neutral"><x-icon name="lock" class="icon-sm" /> Locked</x-badge>
+            @endif
             @if ($session->isOpen())
                 <form method="POST" action="{{ route('attendance.close', $session) }}" style="display:inline;">
                     @csrf
                     <button type="submit" class="btn btn-secondary">
                         <x-icon name="lock" class="icon-sm" />
                         Close session
+                    </button>
+                </form>
+            @endif
+            @if ($session->isLocked() && auth()->user()->hasPermission('attendance.configure'))
+                <form method="POST" action="{{ route('attendance.override', $session) }}" style="display:inline;"
+                    onsubmit="return confirm('Unlock this session for direct editing?');
+                    ">
+                    @csrf
+                    <button type="submit" class="btn btn-secondary">
+                        <x-icon name="refresh" class="icon-sm" />
+                        Unlock session
                     </button>
                 </form>
             @endif
@@ -36,18 +50,68 @@
             <div class="flex" style="justify-content: space-between; align-items:center; margin-bottom: var(--space-3); flex-wrap:wrap; gap: var(--space-2);">
                 <div>
                     <h3 class="h4" style="margin-bottom:2px;">Marking board</h3>
-                    <p class="text-sm text-muted">Tap a status per student, then save. Works offline too.</p>
+                    @if ($session->isOpen())
+                        <p class="text-sm text-muted">Tap a status per student, then save. Works offline too.</p>
+                    @else
+                        <p class="text-sm text-muted">This session is locked. Direct edits are disabled — an authorized administrator can unlock it.</p>
+                    @endif
                 </div>
-                <div class="att-summary">
-                    @foreach (\App\Support\Enums\AttendanceStatus::cases() as $status)
-                        <span class="att-chip {{ $status->value }}">
-                            {{ $status->short() }} · <b x-text="summary['{{ $status->value }}']">0</b>
-                        </span>
-                    @endforeach
-                </div>
+                @if ($session->isOpen())
+                    <div class="att-summary">
+                        @foreach (\App\Support\Enums\AttendanceStatus::cases() as $status)
+                            <span class="att-chip {{ $status->value }}">
+                                {{ $status->short() }} · <b x-text="summary['{{ $status->value }}']">0</b>
+                            </span>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="att-summary">
+                        @foreach (\App\Support\Enums\AttendanceStatus::cases() as $status)
+                            <span class="att-chip {{ $status->value }}">
+                                {{ $status->short() }} · <b>{{ $summary[$status->value] }}</b>
+                            </span>
+                        @endforeach
+                    </div>
+                @endif
             </div>
 
-            <form method="POST" action="{{ route('attendance.update', $session) }}" @submit.prevent="handleSubmit($event)">
+            @if (!$session->isOpen())
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Student</th>
+                                <th>Student no.</th>
+                                <th>Status</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($boardRows as $i => $student)
+                                <tr>
+                                    <td class="text-sm text-muted">{{ $i + 1 }}</td>
+                                    <td class="text-sm">{{ $student['name'] }}</td>
+                                    <td><span class="code-chip">{{ $student['number'] }}</span></td>
+                                    <td>
+                                        <x-badge :color="\App\Support\Enums\AttendanceStatus::tryFrom($student['status'])?->badgeColor()">
+                                            {{ \App\Support\Enums\AttendanceStatus::tryFrom($student['status'])?->label() }}
+                                        </x-badge>
+                                    </td>
+                                    <td class="text-sm text-muted">{{ $student['note'] ?: '—' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5">
+                                        <x-empty-state icon="users" title="No students in this class" message="Enroll students into this class first." />
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <form method="POST" action="{{ route('attendance.update', $session) }}" @submit.prevent="handleSubmit($event)">
                 @csrf
                 @method('PUT')
 
@@ -118,6 +182,7 @@
                     </div>
                 </div>
             </form>
+            @endif
         </x-card>
 
         {{-- Sidebar --}}
@@ -151,6 +216,18 @@
                         <dt>Opened</dt>
                         <dd>{{ $session->opened_at?->format('g:i A') ?? '—' }}</dd>
                     </div>
+                    @if ($session->submitted_at)
+                        <div>
+                            <dt>Submitted</dt>
+                            <dd>{{ $session->submitted_at?->format('M j, Y g:i A') ?? '—' }}</dd>
+                        </div>
+                    @endif
+                    @if ($session->locked_at)
+                        <div>
+                            <dt>Locked</dt>
+                            <dd>{{ $session->locked_at?->format('M j, Y g:i A') ?? '—' }}</dd>
+                        </div>
+                    @endif
                 </dl>
             </x-card>
 

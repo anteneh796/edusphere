@@ -20,6 +20,13 @@ class Setting extends Model
         return static::where('key', $key)->value('value') ?? $default;
     }
 
+    public static function bool(string $key, bool $default = true): bool
+    {
+        $value = static::value($key);
+
+        return $value === null ? $default : filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
     public static function set(string $key, mixed $value, string $group = 'general'): void
     {
         static::updateOrCreate(

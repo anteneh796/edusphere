@@ -2,9 +2,9 @@
 
 namespace App\Domains\Accounts\Requests;
 
+use App\Domains\Accounts\Services\PasswordService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 
 class UpdatePasswordRequest extends FormRequest
 {
@@ -21,7 +21,7 @@ class UpdatePasswordRequest extends FormRequest
                     $fail('The current password is incorrect.');
                 }
             }],
-            'new_password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'new_password' => ['required', 'confirmed', ...PasswordService::policyRules(), PasswordService::historyRule()],
         ];
     }
 }

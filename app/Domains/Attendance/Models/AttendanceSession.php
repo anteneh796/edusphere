@@ -26,6 +26,8 @@ class AttendanceSession extends Model
         'note',
         'opened_at',
         'closed_at',
+        'submitted_at',
+        'locked_at',
     ];
 
     protected function casts(): array
@@ -35,12 +37,24 @@ class AttendanceSession extends Model
             'status' => AttendanceSessionStatus::class,
             'opened_at' => 'datetime',
             'closed_at' => 'datetime',
+            'submitted_at' => 'datetime',
+            'locked_at' => 'datetime',
         ];
     }
 
     public function isOpen(): bool
     {
         return $this->status === AttendanceSessionStatus::Open;
+    }
+
+    public function isLocked(): bool
+    {
+        return $this->locked_at !== null;
+    }
+
+    public function name(): string
+    {
+        return ($this->classRoom?->name ?? 'Class').' · '.$this->date->format('M j, Y');
     }
 
     public function summaryLabel(): string

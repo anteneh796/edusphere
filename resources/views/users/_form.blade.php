@@ -12,6 +12,13 @@
     </div>
 
     <div class="flex flex-col" style="gap: var(--space-2);">
+        <x-input name="username" label="Username" :value="old('username', $editing ? $user->username : null)" placeholder="abebe.bekele" />
+        <x-input name="employee_id" label="Employee ID" :value="old('employee_id', $editing ? $user->employee_id : null)" placeholder="EMP-0001" />
+        <x-input name="student_number" label="Student number" :value="old('student_number', $editing ? $user->student_number : null)" placeholder="ES-26-0001" />
+        <div class="form-hint">These identifiers can be used to sign in when enabled under Settings.</div>
+    </div>
+
+    <div class="flex flex-col" style="gap: var(--space-2);">
         <div class="form-group">
             <label class="form-label">Roles <span class="required">*</span></label>
             <div @class(['flex flex-col', 'forms' => true]) style="gap: 2px; border:1px solid var(--color-border); border-radius: var(--control-radius); padding: var(--space-1) var(--space-2); background: var(--color-surface);">
@@ -49,7 +56,7 @@
         <label class="form-label" for="status">Status</label>
         <select id="status" name="status" class="form-select" required>
             <option value="">Select status…</option>
-            @foreach (['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended'] as $value => $label)
+            @foreach (['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended', 'archived' => 'Archived'] as $value => $label)
                 <option value="{{ $value }}" @selected(old('status', $editing ? $user->status : 'active') === $value)>{{ $label }}</option>
             @endforeach
         </select>

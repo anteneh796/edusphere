@@ -9,7 +9,7 @@ class UserPolicy
 {
     public function viewAny(?User $user): bool
     {
-        return $user && ($user->hasRole(RoleName::SuperAdmin->value) || $user->hasRole(RoleName::Principal->value));
+        return (bool) $user?->hasPermission('users.view');
     }
 
     public function view(?User $user, User $record): bool
@@ -19,7 +19,7 @@ class UserPolicy
 
     public function create(?User $user): bool
     {
-        return $user && ($user->hasRole(RoleName::SuperAdmin->value) || $user->hasRole(RoleName::Principal->value));
+        return (bool) $user?->hasPermission('users.create');
     }
 
     public function update(?User $user, User $record): bool
@@ -28,12 +28,12 @@ class UserPolicy
             return false;
         }
 
-        // A user cannot edit themselves into confusion; super admins always allowed.
+        // A user cannot edit themselves into confusion; only super admins.
         if ($user->getKey() === $record->getKey()) {
             return $user->hasRole(RoleName::SuperAdmin->value);
         }
 
-        return $user->hasRole(RoleName::SuperAdmin->value) || $user->hasRole(RoleName::Principal->value);
+        return $user->hasPermission('users.edit');
     }
 
     public function delete(?User $user, User $record): bool
@@ -50,6 +50,6 @@ class UserPolicy
             return false;
         }
 
-        return $user->hasRole(RoleName::SuperAdmin->value);
+        return $user->hasPermission('users.delete');
     }
 }

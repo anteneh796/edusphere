@@ -24,7 +24,6 @@ use App\Support\Enums\ExamType;
 use App\Support\Enums\GuardianRelationship;
 use App\Support\Enums\RoleName;
 use App\Support\Enums\StudentStatus;
-use App\Support\GradeScale;
 use Illuminate\Database\Seeder;
 
 class DevSeeder extends Seeder
@@ -33,7 +32,6 @@ class DevSeeder extends Seeder
     {
         $this->seedTeachers();
         $this->seedStaff();
-        $this->seedPortalAccounts();
         $this->seedPortalAccounts();
 
         if (Student::count() === 0) {
@@ -122,7 +120,6 @@ class DevSeeder extends Seeder
                             ['exam_subject_id' => $paper->getKey(), 'student_id' => $student->getKey()],
                             [
                                 'marks_obtained' => $marks,
-                                'grade' => GradeScale::letter($marks),
                                 'entered_by_id' => $teachers->random()->getKey(),
                             ]
                         );
@@ -236,7 +233,11 @@ class DevSeeder extends Seeder
         $staff = [
             ['email' => 'principal@edusphere.com', 'first_name' => 'Bereket', 'last_name' => 'Mengistu', 'role' => RoleName::Principal->value],
             ['email' => 'registrar@edusphere.com', 'first_name' => 'Hirut', 'last_name' => 'Lemma', 'role' => RoleName::Registrar->value],
-            ['email' => 'accountant@edusphere.com', 'first_name' => 'Selamawit', 'last_name' => 'Haile', 'role' => RoleName::Accountant->value],
+            ['email' => 'finance@edusphere.com', 'first_name' => 'Selamawit', 'last_name' => 'Haile', 'role' => RoleName::FinanceOfficer->value],
+            ['email' => 'school_admin@edusphere.com', 'first_name' => 'Tesfahun', 'last_name' => 'Deresse', 'role' => RoleName::SchoolAdmin->value],
+            ['email' => 'vice_principal@edusphere.com', 'first_name' => 'Mahlet', 'last_name' => 'Gebeyehu', 'role' => RoleName::VicePrincipal->value],
+            ['email' => 'hr@edusphere.com', 'first_name' => 'Lidya', 'last_name' => 'Yirga', 'role' => RoleName::HROfficer->value],
+            ['email' => 'reception@edusphere.com', 'first_name' => 'Selam', 'last_name' => 'Ayele', 'role' => RoleName::Reception->value],
         ];
 
         foreach ($staff as $person) {
@@ -306,8 +307,10 @@ class DevSeeder extends Seeder
     {
         $currentYear = AcademicYear::where('is_current', true)->firstOrFail();
         $previousYear = AcademicYear::where('is_current', false)->latest('name')->firstOrFail();
-        $grades = GradeLevel::ordered()->get();
         $classes = ClassRoom::where('academic_year_id', $currentYear->getKey())->get();
+
+        $grades = GradeLevel::ordered()->get()
+            ->filter(fn (GradeLevel $grade) => $classes->contains('grade_level_id', $grade->getKey()));
 
         $names = [
             ['Abebe', 'Kebede'], ['Sara', 'Tesfaye'], ['Dawit', 'Haile'],

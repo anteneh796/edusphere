@@ -4,7 +4,6 @@ namespace App\Domains\Exams\Models;
 
 use App\Domains\Accounts\Models\User;
 use App\Domains\Students\Models\Student;
-use App\Support\GradeScale;
 use App\Support\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,7 +17,6 @@ class ExamResult extends Model
         'exam_subject_id',
         'student_id',
         'marks_obtained',
-        'grade',
         'remarks',
         'entered_by_id',
     ];
@@ -39,11 +37,6 @@ class ExamResult extends Model
         $max = (float) ($this->examSubject?->max_marks ?? 100);
 
         return $max > 0 ? round(((float) $this->marks_obtained / $max) * 100, 1) : null;
-    }
-
-    public function gradeColor(): string
-    {
-        return $this->grade ? GradeScale::badgeColor($this->grade) : 'neutral';
     }
 
     /* -------------------------------- Relations -------------------------------- */

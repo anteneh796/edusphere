@@ -1,10 +1,10 @@
-<x-layouts.app :title="'Register guardian'">
+<x-layouts.app :title="__('Register guardian')">
     <x-breadcrumb :items="[
-        ['label' => 'Guardians', 'url' => route('guardians.index')],
-        ['label' => 'Register guardian'],
+        ['label' => __('Guardians'), 'url' => route('guardians.index')],
+        ['label' => __('Register guardian')],
     ]" />
 
-    <x-page-header title="Register guardian" description="Create a parent/guardian record for the school." />
+    <x-page-header :title="__('Register guardian')" :description="__('Create a parent/guardian record for the school.')" />
 
     <div style="max-width: 1100px;">
         <x-card>
@@ -13,10 +13,10 @@
                 @include('guardians._form')
 
                 <div class="card-footer">
-                    <a href="{{ route('guardians.index') }}" class="btn btn-secondary">Cancel</a>
+                    <a href="{{ route('guardians.index') }}" class="btn btn-secondary">{{ __('Cancel') }}</a>
                     <button type="submit" class="btn btn-primary">
                         <x-icon name="check" class="icon-sm" />
-                        Register guardian
+                        {{ __('Register guardian') }}
                     </button>
                 </div>
             </form>

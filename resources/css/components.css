@@ -1122,6 +1122,24 @@ body.modal-open {
     .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
 }
 
+/* ============================= Report chart bars ============================= */
+
+.chart-bar-track {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--color-surface-2, var(--color-border));
+    overflow: hidden;
+}
+
+.chart-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--primary);
+    min-width: 2px;
+}
+
+.chart-bar-fill.is-overflow { background: var(--color-danger); }
+
 /* ============================= Divider / misc ============================= */
 
 .divider-h {

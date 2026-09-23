@@ -5,24 +5,20 @@ namespace App\Support\Enums;
 enum RoleName: string
 {
     case SuperAdmin = 'super_admin';
+    case SchoolAdmin = 'school_admin';
     case Principal = 'principal';
+    case VicePrincipal = 'vice_principal';
     case Registrar = 'registrar';
+    case FinanceOfficer = 'finance_officer';
+    case HROfficer = 'hr_officer';
+    case Reception = 'reception';
     case Teacher = 'teacher';
-    case Accountant = 'accountant';
-    case Parent = 'parent';
     case Student = 'student';
+    case Parent = 'parent';
 
     public function label(): string
     {
-        return match ($this) {
-            self::SuperAdmin => 'Super Admin',
-            self::Principal => 'Principal',
-            self::Registrar => 'Registrar',
-            self::Teacher => 'Teacher',
-            self::Accountant => 'Accountant',
-            self::Parent => 'Parent',
-            self::Student => 'Student',
-        };
+        return config('rbac.role_labels', [])[$this->value] ?? ucfirst(str_replace('_', ' ', $this->value));
     }
 
     /** Lower priority value = higher privilege. */
@@ -31,11 +27,15 @@ enum RoleName: string
         return match ($this) {
             self::SuperAdmin => 1,
             self::Principal => 2,
-            self::Registrar => 3,
-            self::Teacher => 4,
-            self::Accountant => 5,
-            self::Parent => 6,
-            self::Student => 7,
+            self::SchoolAdmin => 3,
+            self::VicePrincipal => 4,
+            self::Registrar => 5,
+            self::FinanceOfficer => 6,
+            self::HROfficer => 7,
+            self::Reception => 8,
+            self::Teacher => 8,
+            self::Parent => 9,
+            self::Student => 10,
         };
     }
 

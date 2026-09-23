@@ -1,16 +1,16 @@
-<x-layouts.app :title="'Audit Log'">
-    <x-breadcrumb :items="[['label' => 'Audit Log']]" />
+<x-layouts.app :title="__('Audit Log')">
+    <x-breadcrumb :items="[['label' => __('Audit Log')]]" />
 
-    <x-page-header title="Audit Log" description="Review a trail of sensitive actions performed by staff." />
+    <x-page-header :title="__('Audit Log')" :description="__('Review a trail of sensitive actions performed by staff.')" />
 
     <x-card>
         <form method="GET" action="{{ route('audit.index') }}" class="filter-grid">
-            <x-input name="q" label="Search" :value="request('q')" placeholder="Action, module, record id or user…" wrapperClass="filter-q" />
+            <x-input name="q" :label="__('Search')" :value="request('q')" :placeholder="__('Action, module, record id or user…')" wrapperClass="filter-q" />
 
             <div class="form-group">
-                <label class="form-label" for="module-filter">Module</label>
+                <label class="form-label" for="module-filter">{{ __('Module') }}</label>
                 <select id="module-filter" name="module" class="form-select">
-                    <option value="">All modules</option>
+                    <option value="">{{ __('All modules') }}</option>
                     @foreach ($modules as $value => $label)
                         <option value="{{ $value }}" @selected(request('module') === $value)>{{ $label }}</option>
                     @endforeach
@@ -20,10 +20,10 @@
             <div class="flex gap-1" style="align-items:end;">
                 <button type="submit" class="btn btn-primary">
                     <x-icon name="search" class="icon-sm" />
-                    Filter
+                    {{ __('Filter') }}
                 </button>
                 @if (request('q') || request('module'))
-                    <a href="{{ route('audit.index') }}" class="btn btn-secondary">Clear</a>
+                    <a href="{{ route('audit.index') }}" class="btn btn-secondary">{{ __('Clear') }}</a>
                 @endif
             </div>
         </form>
@@ -32,12 +32,12 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>When</th>
-                        <th>User</th>
-                        <th>Action</th>
-                        <th>Module</th>
-                        <th>IP address</th>
-                        <th class="text-right">Actions</th>
+                        <th>{{ __('When') }}</th>
+                        <th>{{ __('User') }}</th>
+                        <th>{{ __('Action') }}</th>
+                        <th>{{ __('Module') }}</th>
+                        <th>{{ __('IP address') }}</th>
+                        <th class="text-right">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -62,7 +62,7 @@
                             </td>
                             <td class="text-sm text-muted">{{ $log->ip_address ?? '—' }}</td>
                             <td class="actions-cell">
-                                <a href="{{ route('audit.show', $log) }}" class="btn btn-ghost btn-sm btn-icon" title="View details">
+                                <a href="{{ route('audit.show', $log) }}" class="btn btn-ghost btn-sm btn-icon" :title="__('View details')">
                                     <x-icon name="eye" class="icon-sm" />
                                 </a>
                             </td>
@@ -70,7 +70,7 @@
                     @empty
                         <tr>
                             <td colspan="6">
-                                <x-empty-state icon="shield-check" title="No audit entries found" message="Try adjusting your filters." />
+                                <x-empty-state icon="shield-check" :title="__('No audit entries found')" :message="__('Try adjusting your filters.')" />
                             </td>
                         </tr>
                     @endforelse

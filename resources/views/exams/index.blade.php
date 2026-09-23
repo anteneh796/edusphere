@@ -1,28 +1,28 @@
-<x-layouts.app :title="'Exams'">
-    <x-breadcrumb :items="[['label' => 'Exams']]" />
+<x-layouts.app :title="__('Exams')">
+    <x-breadcrumb :items="[['label' => __('Exams')]]" />
 
-    <x-page-header title="Exams & Results" description="Create examinations, assign papers and enter results.">
+    <x-page-header :title="__('Exams & Results')" :description="__('Create examinations, assign papers and enter results.')">
         @can('create', \App\Domains\Exams\Models\Exam::class)
             <a href="{{ route('exams.create') }}" class="btn btn-primary">
                 <x-icon name="award" class="icon-sm" />
-                New exam
+                {{ __('New exam') }}
             </a>
         @endcan
     </x-page-header>
 
     <div class="grid grid-cards" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
-        <x-stat-card label="Draft exams" :value="$draftCount" icon="lock" color="neutral" />
-        <x-stat-card label="Published" :value="$publishedCount" icon="layers" color="info" />
-        <x-stat-card label="Result entries" :value="$resultCount" icon="clipboard-check" color="success" />
-        <x-stat-card label="Current year" value="{{ $currentYear->name }}" icon="calendar" color="primary" />
+        <x-stat-card :label="__('Draft exams')" :value="$draftCount" icon="lock" color="neutral" />
+        <x-stat-card :label="__('Published')" :value="$publishedCount" icon="layers" color="info" />
+        <x-stat-card :label="__('Result entries')" :value="$resultCount" icon="clipboard-check" color="success" />
+        <x-stat-card :label="__('Current year')" value="{{ $currentYear->name }}" icon="calendar" color="primary" />
     </div>
 
     <x-card class="mt-4">
         <form method="GET" action="{{ route('exams.index') }}" class="filter-grid">
             <div class="form-group">
-                <label class="form-label" for="year-filter">Academic year</label>
+                <label class="form-label" for="year-filter">{{ __('Academic year') }}</label>
                 <select id="year-filter" name="year" class="form-select">
-                    <option value="">All years</option>
+                    <option value="">{{ __('All years') }}</option>
                     @foreach ($years as $year)
                         <option value="{{ $year->id }}" @selected(request('year') === $year->id)>{{ $year->name }}</option>
                     @endforeach
@@ -30,9 +30,9 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="type-filter">Type</label>
+                <label class="form-label" for="type-filter">{{ __('Type') }}</label>
                 <select id="type-filter" name="type" class="form-select">
-                    <option value="">All types</option>
+                    <option value="">{{ __('All types') }}</option>
                     @foreach (\App\Support\Enums\ExamType::cases() as $type)
                         <option value="{{ $type->value }}" @selected(request('type') === $type->value)>{{ $type->label() }}</option>
                     @endforeach
@@ -40,9 +40,9 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="status-filter">Status</label>
+                <label class="form-label" for="status-filter">{{ __('Status') }}</label>
                 <select id="status-filter" name="status" class="form-select">
-                    <option value="">All statuses</option>
+                    <option value="">{{ __('All statuses') }}</option>
                     @foreach (\App\Support\Enums\ExamStatus::cases() as $status)
                         <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
                     @endforeach
@@ -52,10 +52,10 @@
             <div class="flex gap-1" style="align-items:end;">
                 <button type="submit" class="btn btn-primary">
                     <x-icon name="search" class="icon-sm" />
-                    Filter
+                    {{ __('Filter') }}
                 </button>
                 @if (request('year') || request('type') || request('status'))
-                    <a href="{{ route('exams.index') }}" class="btn btn-secondary">Clear</a>
+                    <a href="{{ route('exams.index') }}" class="btn btn-secondary">{{ __('Clear') }}</a>
                 @endif
             </div>
         </form>
@@ -64,13 +64,13 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Exam</th>
-                        <th>Year</th>
-                        <th>Type</th>
-                        <th>Dates</th>
-                        <th>Status</th>
-                        <th>Papers</th>
-                        <th class="text-right">Actions</th>
+                        <th>{{ __('Exam') }}</th>
+                        <th>{{ __('Year') }}</th>
+                        <th>{{ __('Type') }}</th>
+                        <th>{{ __('Dates') }}</th>
+                        <th>{{ __('Status') }}</th>
+                        <th>{{ __('Papers') }}</th>
+                        <th class="text-right">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -78,7 +78,7 @@
                         <tr>
                             <td>
                                 <div style="font-weight: var(--weight-semibold);">{{ $exam->name }}</div>
-                                <div class="text-xs text-muted">Created by {{ $exam->createdBy?->name ?? '—' }}</div>
+                                <div class="text-xs text-muted">{{ __('Created by') }} {{ $exam->createdBy?->name ?? '—' }}</div>
                             </td>
                             <td class="text-sm">{{ $exam->academicYear?->name ?? '—' }}</td>
                             <td><x-badge :color="$exam->type?->badgeColor()">{{ $exam->type?->label() }}</x-badge></td>
@@ -89,9 +89,9 @@
                                 @endif
                             </td>
                             <td><x-badge :color="$exam->status?->badgeColor()" :dot="true">{{ $exam->status?->label() }}</x-badge></td>
-                            <td class="text-sm">{{ $exam->papers_count }} paper(s)</td>
+                            <td class="text-sm">{{ $exam->papers_count }} {{ __('paper(s)') }}</td>
                             <td class="actions-cell">
-                                <a href="{{ route('exams.show', $exam) }}" class="btn btn-ghost btn-sm btn-icon" title="View">
+                                <a href="{{ route('exams.show', $exam) }}" class="btn btn-ghost btn-sm btn-icon" :title="__('View')">
                                     <x-icon name="eye" class="icon-sm" />
                                 </a>
                             </td>
@@ -99,9 +99,9 @@
                     @empty
                         <tr>
                             <td colspan="7">
-                                <x-empty-state icon="award" title="No exams found" message="Create an exam to schedule papers and enter results.">
+                                <x-empty-state icon="award" :title="__('No exams found')" :message="__('Create an exam to schedule papers and enter results.')">
                                     @can('create', \App\Domains\Exams\Models\Exam::class)
-                                        <a href="{{ route('exams.create') }}" class="btn btn-primary btn-sm">New exam</a>
+                                        <a href="{{ route('exams.create') }}" class="btn btn-primary btn-sm">{{ __('New exam') }}</a>
                                     @endcan
                                 </x-empty-state>
                             </td>

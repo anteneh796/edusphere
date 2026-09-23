@@ -26,9 +26,8 @@
             'name' => $row['student']->full_name,
             'number' => $row['student']->student_number,
             'marks' => $row['result']?->marks_obtained ?? '',
-            'grade' => $row['result']?->grade ?? '',
             'remarks' => $row['result']?->remarks ?? '',
-        ])->values()), {{ $paper->id }}, {{ $paper->max_marks }})">
+        ])->values()), {{ $paper->id }})">
 
         <x-card>
             <form method="POST" action="{{ route('exams.results.save', $paper) }}" @submit.prevent="handleSubmit($event)">
@@ -42,7 +41,6 @@
                                 <th>#</th>
                                 <th>Student</th>
                                 <th style="width: 120px;">Marks / {{ $maxLabel }}</th>
-                                <th style="width: 64px;">Grade</th>
                                 <th>Remarks</th>
                             </tr>
                         </thead>
@@ -59,12 +57,7 @@
                                             class="form-input" style="width: 120px;"
                                             :name="`results[${index($i)}][marks_obtained]`"
                                             x-model="rows[{{ $i }}].marks"
-                                            @input="rows[{{ $i }}].grade = gradeFor(rows[{{ $i }}].marks, {{ $i }})"
                                             placeholder="—" />
-                                    </td>
-                                    <td>
-                                        <span class="chip" style="min-width: 48px; justify-content:center;"
-                                            x-text="rows[{{ $i }}].grade || '—'">—</span>
                                     </td>
                                     <td>
                                         <input type="text" class="form-input" maxlength="255" placeholder="Optional…"
@@ -75,7 +68,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5">
+                                    <td colspan="4">
                                         <x-empty-state icon="users" title="No students in this class" message="Enroll students into this class first." />
                                     </td>
                                 </tr>
@@ -104,55 +97,24 @@
                 <h3 class="h4" style="margin-bottom: var(--space-2);">Summary</h3>
                 <div class="chips" style="flex-wrap:wrap;">
                     <span class="chip"><b>{{ $summary['total'] }}</b>&nbsp;entered</span>
-                    <span class="chip"><b>{{ $summary['average_percent'] }}%</b>&nbsp;avg</span>
+                    <span class="chip"><b>{{ $summary['average'] }}</b>&nbsp;avg</span>
                     <span class="chip chip-success"><b>{{ $summary['passing'] }}</b>&nbsp;passing</span>
                     <span class="chip chip-danger"><b>{{ $summary['failing'] }}</b>&nbsp;failing</span>
-                    <span class="chip"><b>{{ $summary['best'] }}</b>&nbsp;best %</span>
+                    <span class="chip"><b>{{ $summary['best'] }}</b>&nbsp;best</span>
                 </div>
-            </x-card>
-
-            <x-card>
-                <h3 class="h4" style="margin-bottom: var(--space-2);">Grading scale</h3>
-                <dl class="detail-list">
-                    <div><dt>A+</dt><dd>90 – 100</dd></div>
-                    <div><dt>A</dt><dd>80 – 89</dd></div>
-                    <div><dt>B+</dt><dd>70 – 79</dd></div>
-                    <div><dt>B</dt><dd>60 – 69</dd></div>
-                    <div><dt>C</dt><dd>50 – 59</dd></div>
-                    <div><dt>D</dt><dd>40 – 49</dd></div>
-                    <div><dt>F</dt><dd>Below 40</dd></div>
-                </dl>
             </x-card>
         </div>
     </div>
 
     @push('scripts')
         <script>
-            window.GradeScale = {
-                letter(mark) {
-                    if (mark === '' || mark === null || isNaN(Number(mark))) return '';
-                    const p = Number(mark);
-                    if (p >= 90) return 'A+';
-                    if (p >= 80) return 'A';
-                    if (p >= 70) return 'B+';
-                    if (p >= 60) return 'B';
-                    if (p >= 50) return 'C';
-                    if (p >= 40) return 'D';
-                    return 'F';
-                },
-            };
-
             document.addEventListener('alpine:init', () => {
-                Alpine.data('resultsBoard', (seedRows, paperId, maxMarks) => ({
+                Alpine.data('resultsBoard', (seedRows, paperId) => ({
                     rows: seedRows,
                     saving: false,
 
                     index(i) {
                         return i;
-                    },
-
-                    gradeFor(mark, i) {
-                        return window.GradeScale.letter(Number(mark));
                     },
 
                     get filled() {

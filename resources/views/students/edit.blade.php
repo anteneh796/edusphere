@@ -9,7 +9,7 @@
 
     <div style="max-width: 1100px;">
         <x-card>
-            <form method="POST" action="{{ route('students.update', $student) }}" novalidate>
+            <form method="POST" action="{{ route('students.update', $student) }}" novalidate enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 @include('students._form')

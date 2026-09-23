@@ -3,6 +3,7 @@
 namespace App\Domains\Accounts\Controllers;
 
 use App\Domains\Accounts\Models\User;
+use App\Domains\Accounts\Requests\ResetPasswordAdminRequest;
 use App\Domains\Accounts\Requests\StoreUserRequest;
 use App\Domains\Accounts\Requests\UpdateUserRequest;
 use App\Domains\Accounts\Services\UserService;
@@ -71,6 +72,16 @@ class UserController extends Controller
 
         return redirect()->route('users.index')
             ->with('status', 'User "'.$updated->full_name.'" updated successfully.');
+    }
+
+    public function resetPassword(ResetPasswordAdminRequest $request, User $user): RedirectResponse
+    {
+        $this->authorize('update', $user);
+
+        $this->userService->resetPassword($user, $request->validated('password'));
+
+        return redirect()->route('users.show', $user)
+            ->with('status', 'Password reset. The user will be asked to set a new password at next sign-in.');
     }
 
     public function destroy(User $user): RedirectResponse

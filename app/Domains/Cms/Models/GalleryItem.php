@@ -14,7 +14,10 @@ class GalleryItem extends Model
 
     protected $fillable = [
         'caption',
+        'album',
         'image_path',
+        'media_type',
+        'video_url',
         'sort_order',
         'published',
     ];
@@ -27,9 +30,65 @@ class GalleryItem extends Model
         ];
     }
 
+    public const MEDIA_IMAGE = 'image';
+
+    public const MEDIA_VIDEO = 'video';
+
+    public const MEDIA_TYPE_LABELS = [
+        self::MEDIA_IMAGE => 'Photo',
+        self::MEDIA_VIDEO => 'Video',
+    ];
+
     public function isPublished(): bool
     {
         return $this->published;
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image_path ? url('storage/'.$this->image_path) : null;
+    }
+
+    public function getTitleAttribute(): ?string
+    {
+        return $this->caption;
+    }
+
+    public function isVideo(): bool
+    {
+        return $this->media_type === self::MEDIA_VIDEO;
+    }
+
+    public function getVideoEmbedUrlAttribute(): ?string
+    {
+        $url = $this->video_url;
+
+        if (! $url) {
+            return null;
+        }
+
+        if (preg_match('/youtu\.be\/([\w-]+)/', $url, $matches)) {
+            return 'https://www.youtube.com/embed/'.$matches[1];
+        }
+
+        if (preg_match('/youtube\.com\/watch\?v=([\w-]+)/', $url, $matches)) {
+            return 'https://www.youtube.com/embed/'.$matches[1];
+        }
+
+        if (preg_match('/youtube\.com\/embed\/([\w-]+)/', $url, $matches)) {
+            return $url;
+        }
+
+        if (preg_match('/vimeo\.com\/(\d+)/', $url, $matches)) {
+            return 'https://player.vimeo.com/video/'.$matches[1];
+        }
+
+        return $url;
+    }
+
+    public function getAlbumLabelAttribute(): ?string
+    {
+        return $this->album ? ucwords($this->album) : null;
     }
 
     /* --------------------------------- Scopes ---------------------------------- */

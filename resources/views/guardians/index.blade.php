@@ -1,26 +1,26 @@
-<x-layouts.app :title="'Guardians'">
-    <x-breadcrumb :items="[['label' => 'Guardians']]" />
+<x-layouts.app :title="__('Guardians')">
+    <x-breadcrumb :items="[['label' => __('Guardians')]]" />
 
-    <x-page-header title="Guardians" description="Manage parents and guardians linked to student records.">
+    <x-page-header :title="__('Guardians')" :description="__('Manage parents and guardians linked to student records.')">
         @can('create', \App\Domains\Students\Models\Guardian::class)
             <a href="{{ route('guardians.create') }}" class="btn btn-primary">
                 <x-icon name="user-plus" class="icon-sm" />
-                Register guardian
+                {{ __('Register guardian') }}
             </a>
         @endcan
     </x-page-header>
 
     <x-card>
         <form method="GET" action="{{ route('guardians.index') }}" class="filter-grid">
-            <x-input name="q" label="Search" :value="request('q')" placeholder="Name, phone or email…" wrapperClass="filter-q" />
+            <x-input name="q" :label="__('Search')" :value="request('q')" :placeholder="__('Name, phone or email…')" wrapperClass="filter-q" />
 
             <div class="flex gap-1" style="align-items:end;">
                 <button type="submit" class="btn btn-primary">
                     <x-icon name="search" class="icon-sm" />
-                    Filter
+                    {{ __('Filter') }}
                 </button>
                 @if (request('q'))
-                    <a href="{{ route('guardians.index') }}" class="btn btn-secondary">Clear</a>
+                    <a href="{{ route('guardians.index') }}" class="btn btn-secondary">{{ __('Clear') }}</a>
                 @endif
             </div>
         </form>
@@ -29,11 +29,11 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Guardian</th>
-                        <th>Relationship</th>
-                        <th>Contact</th>
-                        <th>Students</th>
-                        <th class="text-right">Actions</th>
+                        <th>{{ __('Guardian') }}</th>
+                        <th>{{ __('Relationship') }}</th>
+                        <th>{{ __('Contact') }}</th>
+                        <th>{{ __('Students') }}</th>
+                        <th class="text-right">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -61,23 +61,23 @@
                                 <span class="code-chip">{{ $guardian->students_count }}</span>
                             </td>
                             <td class="actions-cell">
-                                <a href="{{ route('guardians.show', $guardian) }}" class="btn btn-ghost btn-sm btn-icon" title="View">
+                                <a href="{{ route('guardians.show', $guardian) }}" class="btn btn-ghost btn-sm btn-icon" :title="__('View')">
                                     <x-icon name="eye" class="icon-sm" />
                                 </a>
                                 @can('update', $guardian)
-                                    <a href="{{ route('guardians.edit', $guardian) }}" class="btn btn-ghost btn-sm btn-icon" title="Edit">
+                                    <a href="{{ route('guardians.edit', $guardian) }}" class="btn btn-ghost btn-sm btn-icon" :title="__('Edit')">
                                         <x-icon name="pencil" class="icon-sm" />
                                     </a>
                                 @endcan
                                 @can('delete', $guardian)
                                     <button type="button" class="btn btn-ghost btn-sm btn-icon text-danger"
-                                        title="Delete"
+                                        :title="__('Delete')"
                                         @click="$store.confirm.ask({
-                                            title: 'Delete guardian?',
-                                            message: `Delete ${@js($guardian->full_name)}. They will be unlinked from any students.`,
+                                            title: @js(__('Delete guardian?')),
+                                            message: @js(__('Delete').' '.$guardian->full_name.'. '.__('They will be unlinked from any students.')),
                                             action: @js(route('guardians.destroy', $guardian)),
                                             method: 'DELETE',
-                                            confirmText: 'Delete'
+                                            confirmText: @js(__('Delete'))
                                         })">
                                         <x-icon name="trash" class="icon-sm" />
                                     </button>
@@ -87,9 +87,9 @@
                     @empty
                         <tr>
                             <td colspan="5">
-                                <x-empty-state icon="users" title="No guardians found" message="Try adjusting your filters or register a new guardian.">
+                                <x-empty-state icon="users" :title="__('No guardians found')" :message="__('Try adjusting your filters or register a new guardian.')">
                                     @can('create', \App\Domains\Students\Models\Guardian::class)
-                                        <a href="{{ route('guardians.create') }}" class="btn btn-primary btn-sm">Register guardian</a>
+                                        <a href="{{ route('guardians.create') }}" class="btn btn-primary btn-sm">{{ __('Register guardian') }}</a>
                                     @endcan
                                 </x-empty-state>
                             </td>

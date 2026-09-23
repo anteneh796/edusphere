@@ -40,7 +40,7 @@ class StudentPortalController extends Controller
                     'records' => AttendanceRecord::query()
                         ->with('session')
                         ->where('student_id', $student->getKey())
-                        ->latest('attendance_records.id')
+                        ->latest('attendance_records.created_at')
                         ->limit(10)
                         ->get(),
                 ]
@@ -49,7 +49,7 @@ class StudentPortalController extends Controller
                 ? ExamResult::query()
                     ->with(['examSubject.subject'])
                     ->where('student_id', $student->getKey())
-                    ->latest('id')
+                    ->latest('created_at')
                     ->limit(10)
                     ->get()
                 : collect(),
@@ -66,7 +66,7 @@ class StudentPortalController extends Controller
                 ? AttendanceRecord::query()
                     ->with('session.classRoom')
                     ->where('student_id', $student->getKey())
-                    ->latest('attendance_records.id')
+                    ->latest('attendance_records.created_at')
                     ->get()
                 : collect(),
         ]);
@@ -86,9 +86,16 @@ class StudentPortalController extends Controller
                         'examSubject.classRoom',
                     ])
                     ->where('student_id', $student->getKey())
-                    ->latest('id')
+                    ->latest('created_at')
                     ->get()
                 : collect(),
+        ]);
+    }
+
+    public function profile(): View
+    {
+        return view('portals.student.profile', [
+            'student' => $this->currentStudent(),
         ]);
     }
 }

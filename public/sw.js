@@ -1,4 +1,4 @@
-const CACHE_NAME = 'edusphere-v1';
+const CACHE_NAME = 'edusphere-v2';
 const APP_SHELL = [
     '/',
     '/manifest.json',
@@ -41,18 +41,17 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Network-first for navigation requests, but serve a primed page (e.g. the
-    // cached attendance board) first, then fall back to the cached app shell.
+    // Network-first for navigation requests — fresh HTML after each build,
+    // falling back to the offline page only when offline.
     if (request.mode === 'navigate') {
         event.respondWith(
-            caches.match(request).then((cached) => cached || fetch(request)
+            fetch(request)
                 .then((response) => {
                     const copy = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(request.url, copy));
-                    caches.open(CACHE_NAME).then((cache) => cache.put('/', response.clone()));
+                    caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
                     return response;
                 })
-                .catch(() => caches.match('/').then((shell) => shell || caches.match('/offline.html'))))
+                .catch(() => caches.match('/offline.html'))
         );
         return;
     }

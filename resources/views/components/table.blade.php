@@ -1,7 +1,7 @@
 @props([
     'columns' => [],
     'rows' => [],
-    'emptyMessage' => 'No records found.',
+    'emptyMessage' => __('No records found.'),
     'emptyAction' => null,
     'actionsLabel' => '',
 ])

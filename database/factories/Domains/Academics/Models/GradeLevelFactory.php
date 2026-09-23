@@ -14,29 +14,30 @@ class GradeLevelFactory extends Factory
 
     public function definition(): array
     {
+        static $order = 0;
+
         $grades = [
-            'KG1' => ['name' => 'Kindergarten 1', 'code' => 'KG1'],
-            'KG2' => ['name' => 'Kindergarten 2', 'code' => 'KG2'],
-            '1' => ['name' => 'Grade 1', 'code' => '1'],
-            '2' => ['name' => 'Grade 2', 'code' => '2'],
-            '3' => ['name' => 'Grade 3', 'code' => '3'],
-            '4' => ['name' => 'Grade 4', 'code' => '4'],
-            '5' => ['name' => 'Grade 5', 'code' => '5'],
-            '6' => ['name' => 'Grade 6', 'code' => '6'],
-            '7' => ['name' => 'Grade 7', 'code' => '7'],
-            '8' => ['name' => 'Grade 8', 'code' => '8'],
-            '9' => ['name' => 'Grade 9', 'code' => '9'],
-            '10' => ['name' => 'Grade 10', 'code' => '10'],
-            '11' => ['name' => 'Grade 11', 'code' => '11'],
-            '12' => ['name' => 'Grade 12', 'code' => '12'],
+            'KG1' => ['name' => 'Kindergarten 1', 'stage' => 'kindergarten'],
+            'KG2' => ['name' => 'Kindergarten 2', 'stage' => 'kindergarten'],
+            '1' => ['name' => 'Grade 1', 'stage' => 'lower_primary'],
+            '2' => ['name' => 'Grade 2', 'stage' => 'lower_primary'],
+            '3' => ['name' => 'Grade 3', 'stage' => 'lower_primary'],
+            '4' => ['name' => 'Grade 4', 'stage' => 'lower_primary'],
+            '5' => ['name' => 'Grade 5', 'stage' => 'upper_primary'],
+            '6' => ['name' => 'Grade 6', 'stage' => 'upper_primary'],
+            '7' => ['name' => 'Grade 7', 'stage' => 'upper_primary'],
+            '8' => ['name' => 'Grade 8', 'stage' => 'upper_primary'],
         ];
 
-        $grade = fake()->randomElement($grades);
+        $code = array_rand($grades);
+        $order = ++$order;
 
         return [
-            'name' => $grade['name'],
-            'code' => $grade['code'],
-            'sort_order' => (int) $grade['code'] + 2,
+            'name' => $grades[$code]['name'].' '.$order,
+            'code' => $code.'-F'.$order,
+            'stage' => $grades[$code]['stage'],
+            'is_active' => true,
+            'sort_order' => $order,
         ];
     }
 }

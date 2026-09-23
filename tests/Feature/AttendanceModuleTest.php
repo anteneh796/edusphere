@@ -34,7 +34,7 @@ class AttendanceModuleTest extends TestCase
         Role::create(['name' => RoleName::Principal->value, 'label' => 'Principal']);
         Role::create(['name' => RoleName::Registrar->value, 'label' => 'Registrar']);
         Role::create(['name' => RoleName::Teacher->value, 'label' => 'Teacher']);
-        Role::create(['name' => RoleName::Accountant->value, 'label' => 'Accountant']);
+        Role::create(['name' => RoleName::FinanceOfficer->value, 'label' => 'Finance Officer']);
 
         $year = AcademicYear::factory()->current()->create();
         $grade = GradeLevel::create(['name' => 'Grade 5', 'code' => '5', 'sort_order' => 6]);
@@ -176,11 +176,11 @@ class AttendanceModuleTest extends TestCase
         $this->assertDatabaseMissing('attendance_records', ['attendance_session_id' => $session->getKey()]);
     }
 
-    public function test_accountant_is_denied_access_to_attendance(): void
+    public function test_finance_officer_is_denied_access_to_attendance(): void
     {
-        $accountant = $this->userWithRole(RoleName::Accountant->value);
+        $financeOfficer = $this->userWithRole(RoleName::FinanceOfficer->value);
 
-        $this->actingAs($accountant)
+        $this->actingAs($financeOfficer)
             ->get(route('attendance.index'))
             ->assertForbidden();
     }

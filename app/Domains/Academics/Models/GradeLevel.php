@@ -15,9 +15,18 @@ class GradeLevel extends Model
     protected $fillable = [
         'name',
         'code',
+        'stage',
+        'is_active',
         'sort_order',
         'description',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
 
     public function classRooms()
     {
@@ -32,5 +41,10 @@ class GradeLevel extends Model
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('sort_order');
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
     }
 }

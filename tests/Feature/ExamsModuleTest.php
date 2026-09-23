@@ -16,6 +16,7 @@ use App\Support\Enums\ExamStatus;
 use App\Support\Enums\ExamType;
 use App\Support\Enums\RoleName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class ExamsModuleTest extends TestCase
@@ -38,7 +39,7 @@ class ExamsModuleTest extends TestCase
         Role::create(['name' => RoleName::Principal->value, 'label' => 'Principal']);
         Role::create(['name' => RoleName::Registrar->value, 'label' => 'Registrar']);
         Role::create(['name' => RoleName::Teacher->value, 'label' => 'Teacher']);
-        Role::create(['name' => RoleName::Accountant->value, 'label' => 'Accountant']);
+        Role::create(['name' => RoleName::FinanceOfficer->value, 'label' => 'Finance Officer']);
 
         $year = AcademicYear::factory()->current()->create();
         $grade = GradeLevel::create(['name' => 'Grade 5', 'code' => '5', 'sort_order' => 6]);
@@ -157,11 +158,11 @@ class ExamsModuleTest extends TestCase
         $this->assertDatabaseMissing('exams', ['name' => 'Unauthorized Exam']);
     }
 
-    public function test_accountant_is_denied_access_to_exams(): void
+    public function test_finance_officer_is_denied_access_to_exams(): void
     {
-        $accountant = $this->userWithRole(RoleName::Accountant->value);
+        $financeOfficer = $this->userWithRole(RoleName::FinanceOfficer->value);
 
-        $this->actingAs($accountant)
+        $this->actingAs($financeOfficer)
             ->get(route('exams.index'))
             ->assertForbidden();
     }
@@ -220,11 +221,11 @@ class ExamsModuleTest extends TestCase
         $this->actingAs($teacher)
             ->get(route('exams.results', $paper))
             ->assertOk()
-            ->assertSee('Grading scale')
+            ->assertDontSee('Grading scale')
             ->assertSee('max 100 marks');
     }
 
-    public function test_entering_results_stores_marks_computed_grade_and_entered_by(): void
+    public function test_entering_results_stores_marks_and_entered_by(): void
     {
         $teacher = $this->userWithRole(RoleName::Teacher->value);
         $exam = $this->makeExam(ExamStatus::Published->value);
@@ -243,12 +244,12 @@ class ExamsModuleTest extends TestCase
         $first = ExamResult::where('student_id', $this->firstStudent->getKey())->firstOrFail();
 
         $this->assertSame('85.00', $first->marks_obtained);
-        $this->assertSame('A', $first->grade);
         $this->assertSame('Excellent', $first->remarks);
         $this->assertSame($teacher->getKey(), $first->entered_by_id);
+        $this->assertFalse(Schema::hasColumn('exam_results', 'grade'));
 
         $second = ExamResult::where('student_id', $this->secondStudent->getKey())->firstOrFail();
-        $this->assertSame('F', $second->grade);
+        $this->assertSame('33.00', $second->marks_obtained);
     }
 
     public function test_results_are_upserted_when_resubmitted(): void

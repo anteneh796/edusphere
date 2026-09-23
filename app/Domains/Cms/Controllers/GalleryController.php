@@ -34,7 +34,12 @@ class GalleryController extends Controller
 
         $item = GalleryItem::create([
             'caption' => $request->input('caption'),
-            'image_path' => $request->input('image_path'),
+            'album' => $request->input('album'),
+            'image_path' => $request->hasFile('image')
+                ? $request->file('image')->store('cms/gallery', 'public')
+                : (string) $request->input('image_path'),
+            'media_type' => $request->input('media_type') ?? GalleryItem::MEDIA_IMAGE,
+            'video_url' => $request->input('video_url'),
             'sort_order' => $request->integer('sort_order'),
             'published' => (bool) $request->boolean('published'),
         ]);
@@ -58,7 +63,12 @@ class GalleryController extends Controller
 
         $gallery_item->update([
             'caption' => $request->input('caption'),
-            'image_path' => $request->input('image_path'),
+            'album' => $request->input('album'),
+            'image_path' => $request->hasFile('image')
+                ? $request->file('image')->store('cms/gallery', 'public')
+                : ($request->input('image_path') ?? $gallery_item->image_path),
+            'media_type' => $request->input('media_type') ?? GalleryItem::MEDIA_IMAGE,
+            'video_url' => $request->input('video_url'),
             'sort_order' => $request->integer('sort_order'),
             'published' => (bool) $request->boolean('published'),
         ]);

@@ -7,22 +7,25 @@ use App\Domains\Academics\Models\ClassRoom;
 use App\Domains\Accounts\Models\AuditLog;
 use App\Domains\Accounts\Models\Role;
 use App\Domains\Accounts\Models\User;
+use App\Domains\Approvals\Models\ApprovalRequest;
 use App\Domains\Attendance\Models\AttendanceRecord;
 use App\Domains\Attendance\Models\AttendanceSession;
 use App\Domains\Exams\Models\Exam;
 use App\Domains\Exams\Models\ExamResult;
+use App\Domains\Notifications\Models\Notification;
 use App\Domains\Students\Models\Student;
 use App\Http\Controllers\Controller;
 use App\Support\Enums\AttendanceStatus;
 use App\Support\Enums\ExamStatus;
 use App\Support\Enums\RoleName;
 use App\Support\Navigation;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(): View|RedirectResponse
     {
         $user = auth()->user();
         $role = $user?->roles()->value('name');
@@ -32,8 +35,15 @@ class DashboardController extends Controller
         }
 
         if ($role === RoleName::Parent->value) {
-            return redirect()->route('portals.parent.dashboard');
+            return redirect()->route('cms.parent.dashboard');
         }
+        $isSuperAdmin = $role === RoleName::SuperAdmin->value;
+        $isSchoolAdmin = in_array($role, [
+            RoleName::SuperAdmin->value,
+            RoleName::SchoolAdmin->value,
+            RoleName::Principal->value,
+        ], true);
+
         $counts = [
             'students' => Schema::hasTable('students') ? Student::count() : 0,
             'teachers' => Schema::hasTable('users') && Schema::hasTable('roles')
@@ -49,10 +59,17 @@ class DashboardController extends Controller
         }
 
         $accountStats = [
-            'users' => User::count(),
-            'roles' => Role::count(),
-            'audits' => AuditLog::count(),
+            'users' => $isSchoolAdmin ? User::count() : 0,
+            'roles' => $isSchoolAdmin ? Role::count() : 0,
+            'audits' => $isSchoolAdmin ? AuditLog::count() : 0,
         ];
+
+        $canSeeAttendance = in_array($role, [
+            RoleName::SuperAdmin->value,
+            RoleName::Principal->value,
+            RoleName::Registrar->value,
+            RoleName::Teacher->value,
+        ], true);
 
         $attendance = [
             'sessions' => 0,
@@ -62,7 +79,7 @@ class DashboardController extends Controller
             'excused' => 0,
         ];
 
-        if (Schema::hasTable('attendance_sessions') && Schema::hasTable('attendance_records')) {
+        if ($canSeeAttendance && Schema::hasTable('attendance_sessions') && Schema::hasTable('attendance_records')) {
             $sessionIds = AttendanceSession::whereDate('date', today())->pluck('id');
             $attendance['sessions'] = $sessionIds->count();
 
@@ -76,6 +93,13 @@ class DashboardController extends Controller
             }
         }
 
+        $canSeeExams = in_array($role, [
+            RoleName::SuperAdmin->value,
+            RoleName::Principal->value,
+            RoleName::Registrar->value,
+            RoleName::Teacher->value,
+        ], true);
+
         $exams = [
             'draft' => 0,
             'published' => 0,
@@ -83,17 +107,44 @@ class DashboardController extends Controller
             'entries' => 0,
         ];
 
-        if (Schema::hasTable('exams')) {
+        if ($canSeeExams && Schema::hasTable('exams')) {
             $exams['draft'] = Exam::where('status', ExamStatus::Draft->value)->count();
             $exams['published'] = Exam::where('status', ExamStatus::Published->value)->count();
             $exams['completed'] = Exam::where('status', ExamStatus::Completed->value)->count();
         }
 
-        if (Schema::hasTable('exam_results')) {
+        if ($canSeeExams && Schema::hasTable('exam_results')) {
             $exams['entries'] = ExamResult::count();
         }
 
-        $recentLogs = AuditLog::with('user')->latest()->limit(6)->get();
+        $kpis = [
+            'students' => Student::active()->count(),
+            'staff' => User::query()
+                ->whereHas('roles', fn ($query) => $query->whereNotIn('name', [RoleName::Student->value, RoleName::Parent->value]))
+                ->count(),
+            'attendance_rate' => $this->attendanceRate(),
+            'pending_approvals' => ApprovalRequest::pending()->count(),
+            'unread_notifications' => Notification::where('user_id', $user->getKey())->unread()->count(),
+            'fee_collection' => null,
+        ];
+
+        $pendingApprovals = $user->hasPermission('approvals.view')
+            ? ApprovalRequest::pending()
+                ->when(! $user->hasPermission('approvals.approve'), fn ($query) => $query->where('requested_by_id', $user->getKey()))
+                ->with('requester')
+                ->latest('submitted_at')
+                ->limit(5)
+                ->get()
+            : collect();
+
+        $canViewApprovals = $user->hasPermission('approvals.view');
+        $canViewNotifications = $user->hasPermission('notifications.view');
+
+        $recentNotifications = $canViewNotifications
+            ? Notification::where('user_id', $user->getKey())->latest()->limit(5)->get()
+            : collect();
+
+        $recentLogs = $isSchoolAdmin ? AuditLog::with('user')->latest()->limit(6)->get() : collect();
 
         $quickLinks = collect(Navigation::forUser(auth()->user()))
             ->pluck('items')
@@ -106,6 +157,43 @@ class DashboardController extends Controller
             ])
             ->values();
 
-        return view('dashboard.index', compact('counts', 'accountStats', 'recentLogs', 'attendance', 'exams', 'quickLinks'));
+        return view('dashboard.index', compact(
+            'counts',
+            'accountStats',
+            'recentLogs',
+            'attendance',
+            'exams',
+            'quickLinks',
+            'kpis',
+            'pendingApprovals',
+            'recentNotifications',
+            'isSuperAdmin',
+            'isSchoolAdmin',
+            'canSeeAttendance',
+            'canSeeExams',
+            'canViewApprovals',
+            'canViewNotifications',
+        ));
+    }
+
+    private function attendanceRate(): ?float
+    {
+        if (! Schema::hasTable('attendance_records')) {
+            return null;
+        }
+
+        $total = AttendanceRecord::count();
+
+        if ($total === 0) {
+            return null;
+        }
+
+        $attended = AttendanceRecord::whereIn('status', [
+            AttendanceStatus::Present->value,
+            AttendanceStatus::Late->value,
+            AttendanceStatus::Excused->value,
+        ])->count();
+
+        return round(($attended / $total) * 100, 1);
     }
 }

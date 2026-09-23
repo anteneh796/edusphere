@@ -11,6 +11,24 @@
         <x-stat-card label="Published news" :value="$publishedNews" icon="clipboard-check" href="{{ route('cms.news.index') }}" />
         <x-stat-card label="News items (incl. drafts)" :value="$totalNews" icon="clipboard" />
         <x-stat-card label="Gallery photos" :value="$totalGallery" icon="image" href="{{ route('cms.gallery.index') }}" />
+        <x-stat-card label="Events" :value="$totalEvents" icon="calendar" href="{{ route('cms.events.index') }}" />
+        <x-stat-card label="Testimonials" :value="$totalTestimonials" icon="quote" href="{{ route('cms.testimonials.index') }}" />
+        <x-stat-card label="Page sections" :value="$totalBlocks" icon="layers" href="{{ route('cms.content-blocks.index') }}" />
+    </div>
+
+    <div style="margin-top: var(--space-4);">
+        <x-card title="Website sections" subtitle="Every section on the public site (home hero, programmes, facilities, FAQ, departments, office hours, …) is spelled out below — edit the copy, list items and visibility for each.">
+            <div style="display:flex; gap: var(--space-2); flex-wrap:wrap;">
+                <a href="{{ route('cms.content-blocks.create') }}" class="btn btn-primary btn-sm">
+                    <x-icon name="plus" class="icon-sm" />
+                    New section
+                </a>
+                <a href="{{ route('cms.content-blocks.index') }}" class="btn btn-outline btn-sm">Manage all sections</a>
+            </div>
+            <x-slot name="actions">
+                <span class="text-sm text-muted">{{ $totalBlocks }} editable sections</span>
+            </x-slot>
+        </x-card>
     </div>
 
     <div class="grid-2" style="margin-top: var(--space-4);">
@@ -55,6 +73,26 @@
                         Add photo
                     </a>
                     <a href="{{ route('cms.gallery.index') }}" class="btn btn-outline btn-sm">All photos</a>
+                </div>
+            </x-card>
+
+            <x-card title="Events" subtitle="{{ $publishedEvents }} events are live on the public calendar.">
+                <div style="display:flex; gap: var(--space-2); flex-wrap:wrap;">
+                    <a href="{{ route('cms.events.create') }}" class="btn btn-primary btn-sm">
+                        <x-icon name="plus" class="icon-sm" />
+                        New event
+                    </a>
+                    <a href="{{ route('cms.events.index') }}" class="btn btn-outline btn-sm">All events</a>
+                </div>
+            </x-card>
+
+            <x-card title="Testimonials" subtitle="{{ $publishedTestimonials }} quotes are live on the home page.">
+                <div style="display:flex; gap: var(--space-2); flex-wrap:wrap;">
+                    <a href="{{ route('cms.testimonials.create') }}" class="btn btn-primary btn-sm">
+                        <x-icon name="plus" class="icon-sm" />
+                        New testimonial
+                    </a>
+                    <a href="{{ route('cms.testimonials.index') }}" class="btn btn-outline btn-sm">All testimonials</a>
                 </div>
             </x-card>
         </div>

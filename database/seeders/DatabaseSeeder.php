@@ -12,10 +12,18 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             AdminUserSeeder::class,
             AcademicSeeder::class,
+            GradeCapacitySeeder::class,
+            ContentBlockSeeder::class,
         ]);
 
         if (app()->environment(['local'])) {
-            $this->call(DevSeeder::class);
+            $this->call([
+                DevSeeder::class,
+                HrSeeder::class,
+                DemoTeacherSeeder::class,
+                DemoParentSeeder::class,
+                DemoAttendanceSeeder::class,
+            ]);
         }
     }
 }

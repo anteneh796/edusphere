@@ -15,6 +15,8 @@ class Guardian extends Model
 {
     use HasFactory, HasUuid, SoftDeletes;
 
+    public const ACCESS = ['academics', 'attendance', 'finance', 'messages', 'documents', 'requests'];
+
     protected $fillable = [
         'user_id',
         'first_name',
@@ -47,11 +49,34 @@ class Guardian extends Model
 
     public function students(): BelongsToMany
     {
-        return $this->belongsToMany(Student::class)->withTimestamps()->withPivot('is_primary');
+        return $this->belongsToMany(Student::class)
+            ->using(GuardianStudentPivot::class)
+            ->withTimestamps()
+            ->withPivot('is_primary', 'permissions');
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /* --------------------------- Relationship permissions ------------------------- */
+
+    public static function defaultPermissions(): array
+    {
+        return array_combine(self::ACCESS, array_fill(0, count(self::ACCESS), true));
+    }
+
+    public function permissionsFor(Student $student): array
+    {
+        $pivot = $this->students()->whereKey($student->getKey())->first();
+
+        return ($pivot?->pivot?->permissions ?? []) + self::defaultPermissions();
+    }
+
+    public function canAccess(string $access, Student $student): bool
+    {
+        return in_array($access, self::ACCESS, true)
+            && ($this->permissionsFor($student)[$access] ?? false);
     }
 }

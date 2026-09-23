@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Domains\Academics\Models\AcademicYear;
 use App\Domains\Academics\Models\ClassRoom;
+use App\Domains\Academics\Models\GradeLevel;
 use App\Domains\Accounts\Models\Role;
 use App\Domains\Accounts\Models\User;
 use App\Domains\Students\Models\Guardian;
@@ -25,7 +26,7 @@ class GuardiansModuleTest extends TestCase
             RoleName::Principal->value => 'Principal',
             RoleName::Registrar->value => 'Registrar',
             RoleName::Teacher->value => 'Teacher',
-            RoleName::Accountant->value => 'Accountant',
+            RoleName::FinanceOfficer->value => 'Finance Officer',
         ] as $name => $label) {
             Role::firstOrCreate(['name' => $name], ['label' => $label]);
         }
@@ -42,11 +43,16 @@ class GuardiansModuleTest extends TestCase
     private function studentUnit(): Student
     {
         $year = AcademicYear::factory()->current()->create();
-        $class = ClassRoom::factory()->create(['academic_year_id' => $year->getKey()]);
+        $grade = GradeLevel::create(['name' => 'Grade 5', 'code' => '5', 'sort_order' => 6]);
+        $class = ClassRoom::factory()->create([
+            'academic_year_id' => $year->getKey(),
+            'grade_level_id' => $grade->getKey(),
+        ]);
 
         return Student::factory()->create([
             'class_room_id' => $class->getKey(),
             'academic_year_id' => $class->academic_year_id,
+            'grade_level_id' => $grade->getKey(),
         ]);
     }
 
@@ -90,11 +96,11 @@ class GuardiansModuleTest extends TestCase
             ->assertSee('Almaz Bekele');
     }
 
-    public function test_accountant_cannot_access_guardians(): void
+    public function test_finance_officer_cannot_access_guardians(): void
     {
-        $accountant = $this->userWithRole(RoleName::Accountant->value);
+        $financeOfficer = $this->userWithRole(RoleName::FinanceOfficer->value);
 
-        $this->actingAs($accountant)
+        $this->actingAs($financeOfficer)
             ->get(route('guardians.index'))
             ->assertForbidden();
     }

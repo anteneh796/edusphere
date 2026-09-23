@@ -1,14 +1,14 @@
-<x-layouts.app title="Photo Gallery">
+<x-layouts.app :title="__('Photo Gallery')">
     <x-page-header
-        title="Photo Gallery"
-        description="Manage the gallery items shown on the public website.">
+        :title="__('Photo Gallery')"
+        :description="__('Manage the gallery items shown on the public website.')">
         <a href="{{ route('cms.gallery.create') }}" class="btn btn-primary">
             <x-icon name="plus" class="icon-sm" />
-            Add photo
+            {{ __('Add photo') }}
         </a>
     </x-page-header>
 
-    <x-card title="Gallery items">
+    <x-card :title="__('Gallery items')">
         @forelse ($items as $item)
             <div class="list-row">
                 <div style="display:flex; align-items:center; gap: var(--space-2); min-width:0; flex:1;">
@@ -18,25 +18,30 @@
                         <x-icon name="image" class="icon-lg text-muted" />
                     @endif
                     <div style="min-width:0;">
-                        <div class="truncate">{{ $item->caption ?? $item->title ?? 'Untitled' }}</div>
-                        @if ($item->title)
-                            <div class="text-xs text-light">{{ $item->title }}</div>
-                        @endif
+                        <div class="truncate">{{ $item->caption ?? $item->title ?? __('Untitled') }}</div>
+                        <div class="text-xs text-light">
+                            @if ($item->album)
+                                {{ $item->album_label }}
+                            @else
+                                {{ __('General') }}
+                            @endif
+                            · {{ $item->isVideo() ? __('Video') : __('Photo') }}
+                        </div>
                     </div>
                 </div>
 
                 <div style="display:flex; align-items:center; gap: var(--space-1);">
                     <span class="badge {{ $item->published ? 'badge-success' : 'badge-warning' }}">
-                        {{ $item->published ? 'published' : 'draft' }}
+                        {{ $item->published ? __('published') : __('draft') }}
                     </span>
-                    <a href="{{ route('cms.public.gallery') }}" target="_blank" class="btn btn-ghost btn-sm" title="View site">
+                    <a href="{{ route('public.gallery') }}" target="_blank" class="btn btn-ghost btn-sm" :title="__('View site')">
                         <x-icon name="external" class="icon-sm" />
                     </a>
                     <a href="{{ route('cms.gallery.edit', $item) }}" class="btn btn-ghost btn-sm">
                         <x-icon name="pencil" class="icon-sm" />
-                        Edit
+                        {{ __('Edit') }}
                     </a>
-                    <form method="POST" action="{{ route('cms.gallery.destroy', $item) }}" onsubmit="return confirm('Delete this item?');">
+                    <form method="POST" action="{{ route('cms.gallery.destroy', $item) }}" onsubmit="return confirm(@js(__('Delete this item?')));">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-ghost-danger btn-sm">
@@ -46,7 +51,7 @@
                 </div>
             </div>
         @empty
-            <x-empty-state icon="image" title="No gallery items" message="Add photos to showcase your school on the public website." />
+            <x-empty-state icon="image" :title="__('No gallery items')" :message="__('Add photos to showcase your school on the public website.')" />
         @endforelse
 
         @if (method_exists($items, 'links'))

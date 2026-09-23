@@ -32,6 +32,16 @@ class Page extends Model
         return $this->published;
     }
 
+    public function getContentAttribute(): ?string
+    {
+        return $this->attributes['body'] ?? null;
+    }
+
+    public function getExcerptAttribute(): ?string
+    {
+        return $this->attributes['subtitle'] ?? null;
+    }
+
     public function url(): string
     {
         return match ($this->slug) {

@@ -1,0 +1,169 @@
+<?php
+
+namespace App\Domains\Exams\Services;
+
+use App\Domains\Exams\Models\Exam;
+use App\Domains\Exams\Models\ExamSubject;
+use App\Domains\Exams\Models\ReportCard;
+use App\Domains\Exams\Models\ReportCardItem;
+use App\Domains\Students\Models\Student;
+use App\Support\Enums\ReportCardStatus;
+
+class ReportCardsService extends ExamsService
+{
+    /**
+     * Generate a report card for one student across every paper of the exam.
+     *
+     * Snapshot columns (total_max, total_obtained, average_percent, class_rank,
+     * class_size) map 1:1 onto the report_cards migration columns.
+     */
+    public function generateForStudent(Exam $exam, string $studentId): ReportCard
+    {
+        $student = Student::findOrFail($studentId);
+
+        $papers = $exam->papers()
+            ->when($student->class_room_id, fn ($query) => $query->where('class_room_id', $student->class_room_id))
+            ->with(['subject' => fn ($q) => $q->orderBy('position')])
+            ->with(['results' => fn ($q) => $q->where('student_id', $studentId)])
+            ->get();
+
+        $totalMax = $papers->sum(fn (ExamSubject $paper) => (float) $paper->max_marks);
+        $totalObtained = $papers->sum(
+            fn (ExamSubject $paper) => (float) ($paper->results->first()?->marks_obtained ?? 0)
+        );
+
+        $rank = $this->classRank($exam, $student);
+
+        $card = ReportCard::create([
+            'academic_year_id' => $this->currentYear()->getKey(),
+            'academic_term_id' => $this->currentYear()->terms()->first()?->getKey() ?? $exam->academic_term_id,
+            'exam_id' => $exam->getKey(),
+            'student_id' => $studentId,
+            'status' => ReportCardStatus::Generated->value,
+            'total_max_marks' => $totalMax,
+            'total_obtained_marks' => $totalObtained,
+            'average_percent' => $totalMax > 0 ? round(($totalObtained / $totalMax) * 100, 2) : null,
+            'class_rank' => $rank['rank'] ?? null,
+            'class_size' => $rank['size'] ?? null,
+        ]);
+
+        foreach ($papers as $paper) {
+            $result = $paper->results->first();
+
+            if (! $result || $result->marks_obtained === null) {
+                continue;
+            }
+
+            ReportCardItem::updateOrCreate(
+                ['report_card_id' => $card->getKey(), 'subject_id' => $paper->subject_id],
+                [
+                    'max_marks' => (float) $paper->max_marks,
+                    'pass_marks' => (float) $paper->pass_marks,
+                    'marks_obtained' => (float) $result->marks_obtained,
+                    'percentage' => $result->percentage(),
+                    'passes' => (float) $result->marks_obtained >= (float) $paper->pass_marks,
+                ]
+            );
+        }
+
+        $this->snapshotFromResults($card, $exam, $student);
+
+        return $card;
+    }
+
+    /**
+     * Standard competition class ranking from total marks for an exam.
+     *
+     * Ties share the same rank and the next rank is skipped (1, 2, 2, 4…).
+     * Only students with at least one entered result are ranked.
+     *
+     * @return array{rank: ?int, size: int}
+     */
+    public function classRank(Exam $exam, Student $student): array
+    {
+        if (! $student->class_room_id) {
+            return ['rank' => null, 'size' => 0];
+        }
+
+        $totals = $exam->papers()
+            ->where('class_room_id', $student->class_room_id)
+            ->with(['results' => fn ($q) => $q->whereNotNull('marks_obtained')])
+            ->get()
+            ->flatMap(fn (ExamSubject $paper) => $paper->results)
+            ->groupBy('student_id')
+            ->map(fn ($results) => round((float) $results->sum('marks_obtained'), 2))
+            ->sortDesc();
+
+        if ($totals->isEmpty()) {
+            return ['rank' => null, 'size' => 0];
+        }
+
+        $rankMap = [];
+        $previousTotal = null;
+
+        foreach ($totals as $candidateId => $total) {
+            if ($previousTotal === null || abs($total - $previousTotal) >= 0.001) {
+                $currentRank = count($rankMap) + 1;
+            }
+
+            $rankMap[$candidateId] = $currentRank;
+            $previousTotal = $total;
+        }
+
+        return [
+            'rank' => $rankMap[$student->getKey()] ?? null,
+            'size' => $totals->count(),
+        ];
+    }
+
+    /**
+     * Permanently store the derived academic summary on the card (spec #9/#10/#12).
+     */
+    protected function snapshotFromResults(ReportCard $card, Exam $exam, Student $student): void
+    {
+        $rows = $exam->papers()
+            ->where('class_room_id', $student->class_room_id)
+            ->with(['results' => fn ($q) => $q->where('student_id', $student->getKey())->whereNotNull('marks_obtained')])
+            ->get()
+            ->flatMap(fn (ExamSubject $paper) => $paper->results);
+
+        $maxMarks = $exam->papers()
+            ->where('class_room_id', $student->class_room_id)
+            ->get()
+            ->sum('max_marks');
+
+        $obtained = $rows->sum('marks_obtained');
+        $rank = $this->classRank($exam, $student);
+
+        $card->update([
+            'total_obtained_marks' => $obtained,
+            'average_percent' => (float) $maxMarks > 0 ? round(((float) $obtained / (float) $maxMarks) * 100, 2) : null,
+            'class_rank' => $rank['rank'],
+            'class_size' => $rank['size'],
+        ]);
+    }
+
+    /* ----------------------------- Workflow ----------------------------- */
+
+    public function approve(ReportCard $card, string $userId): void
+    {
+        $card->update([
+            'status' => ReportCardStatus::Approved->value,
+            'approved_by_id' => $userId,
+            'approved_at' => now(),
+        ]);
+    }
+
+    public function publish(ReportCard $card, string $userId): void
+    {
+        if ($card->status !== ReportCardStatus::Approved) {
+            throw new \RuntimeException('Only approved report cards can be published.');
+        }
+
+        $card->update([
+            'status' => ReportCardStatus::Published->value,
+            'published_by_id' => $userId,
+            'published_at' => now(),
+        ]);
+    }
+}

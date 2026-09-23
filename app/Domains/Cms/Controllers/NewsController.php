@@ -45,12 +45,13 @@ class NewsController extends Controller
         $item = NewsItem::create([
             'title' => $request->input('title'),
             'slug' => $this->resolveSlug($request),
+            'category' => $request->input('category'),
             'excerpt' => $request->input('excerpt'),
             'body' => $request->input('body'),
-            'image_path' => $request->input('image_path'),
+            'image_path' => $this->storeFeaturedImage($request) ?? $request->input('image_path'),
             'author_id' => auth()->id(),
             'published' => (bool) $request->boolean('published'),
-            'published_at' => $request->boolean('published') ? now() : null,
+            'published_at' => $request->boolean('published') ? ($request->date('published_at') ?? now()) : null,
         ]);
 
         ActivityLogger::log('created news item', 'cms', $item->getKey());
@@ -73,11 +74,14 @@ class NewsController extends Controller
         $news->update([
             'title' => $request->input('title'),
             'slug' => $this->resolveSlug($request, $news),
+            'category' => $request->input('category'),
             'excerpt' => $request->input('excerpt'),
             'body' => $request->input('body'),
-            'image_path' => $request->input('image_path'),
+            'image_path' => $this->storeFeaturedImage($request) ?? $request->input('image_path') ?? $news->image_path,
             'published' => (bool) $request->boolean('published'),
-            'published_at' => $request->boolean('published') ? ($news->published_at ?? now()) : null,
+            'published_at' => $request->boolean('published')
+                ? ($request->date('published_at') ?? $news->published_at ?? now())
+                : null,
         ]);
 
         ActivityLogger::log('updated news item', 'cms', $news->getKey());
@@ -95,6 +99,15 @@ class NewsController extends Controller
 
         return redirect()->route('cms.news.index')
             ->with('status', 'News item deleted.');
+    }
+
+    private function storeFeaturedImage(StoreNewsRequest|UpdateNewsRequest $request): ?string
+    {
+        if (! $request->hasFile('featured_image')) {
+            return null;
+        }
+
+        return $request->file('featured_image')->store('cms/news', 'public');
     }
 
     private function resolveSlug(StoreNewsRequest|UpdateNewsRequest $request, ?NewsItem $item = null): string

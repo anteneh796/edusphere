@@ -1,11 +1,11 @@
-<x-layouts.app :title="'New class'">
+<x-layouts.app :title="__('New class')">
     <x-breadcrumb :items="[
-        ['label' => 'Academics', 'url' => route('academics.index')],
-        ['label' => 'Classes', 'url' => route('academics.classes.index')],
-        ['label' => 'New class'],
+        ['label' => __('Academics'), 'url' => route('academics.index')],
+        ['label' => __('Classes'), 'url' => route('academics.classes.index')],
+        ['label' => __('New class')],
     ]" />
 
-    <x-page-header title="New class" description="Create a class section for a grade level." />
+    <x-page-header :title="__('New class')" :description="__('Create a class section for a grade level.')" />
 
     <div style="max-width: 640px;">
         <x-card>
@@ -14,10 +14,10 @@
                 @include('academics.classes._form', ['currentYearId' => $currentYearId])
 
                 <div class="card-footer">
-                    <a href="{{ route('academics.classes.index') }}" class="btn btn-secondary">Cancel</a>
+                    <a href="{{ route('academics.classes.index') }}" class="btn btn-secondary">{{ __('Cancel') }}</a>
                     <button type="submit" class="btn btn-primary">
                         <x-icon name="check" class="icon-sm" />
-                        Create class
+                        {{ __('Create class') }}
                     </button>
                 </div>
             </form>

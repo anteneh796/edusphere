@@ -8,11 +8,11 @@
         </header>
 
         <div class="prose">
-            {!! $page?->content ?? '<p>This page is coming soon.</p>' !!}
+            {!! $page?->content ?? '<p>' . __('This page is coming soon.') . '</p>' !!}
         </div>
 
-        @if ($page?->published_at)
-            <p class="article-meta">Last updated {{ $page->published_at->diffForHumans() }}</p>
+        @if ($page?->updated_at)
+            <p class="article-meta">{{ __('Last updated') }} {{ $page->updated_at->diffForHumans() }}</p>
         @endif
     </article>
 </x-layouts.public>

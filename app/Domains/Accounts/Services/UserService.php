@@ -4,9 +4,12 @@ namespace App\Domains\Accounts\Services;
 
 use App\Domains\Accounts\Models\Role;
 use App\Domains\Accounts\Models\User;
+use App\Support\ActivityLogger;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class UserService
 {
@@ -48,14 +51,38 @@ class UserService
 
     public function update(User $user, array $data, array $roleIds): User
     {
-        if (empty($data['password'])) {
+        if (! empty($data['password'])) {
+            $password = $data['password'];
             unset($data['password']);
+            PasswordService::recordHistory($user, $password);
         }
 
         $user->update(Arr::except($data, ['roles', 'password_confirmation']));
         $user->roles()->sync($roleIds);
 
         return $user->load('roles');
+    }
+
+    /**
+     * Administrator-triggered password reset. Stores the new password in the
+     * user's history, forces a change at next sign-in and kills other sessions.
+     */
+    public function resetPassword(User $user, ?string $password = null): User
+    {
+        $password ??= Str::password(12);
+
+        PasswordService::recordHistory($user, $password);
+
+        $user->forceFill(['must_change_password' => true])->saveQuietly();
+
+        DB::table('sessions')
+            ->where('user_id', $user->getKey())
+            ->where('id', '!=', session()->getId())
+            ->delete();
+
+        ActivityLogger::log('admin reset password for '.$user->full_name, 'users', $user->id);
+
+        return $user;
     }
 
     public function delete(User $user): void
