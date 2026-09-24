@@ -63,7 +63,7 @@ class ParentPortalController extends Controller
 
     private function authorizeWard(Student $student): void
     {
-        $owns = $this->currentGuardian()?->students()
+        $owns = $this->currentParent()?->students()
             ->whereKey($student->getKey())
             ->exists();
 
@@ -86,7 +86,7 @@ class ParentPortalController extends Controller
     private function viewData(?Student $ward = null): array
     {
         return [
-            'guardian' => $this->currentGuardian(),
+            'guardian' => $this->currentParent(),
             'wards' => $this->wards(),
             'ward' => $ward,
         ];
@@ -106,7 +106,7 @@ class ParentPortalController extends Controller
 
     public function dashboard(): View
     {
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
         $wards = $this->wards();
         $ward = $this->selectedWard($wards);
 
@@ -145,7 +145,7 @@ class ParentPortalController extends Controller
 
     public function switchWard(Request $request): RedirectResponse
     {
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
 
         $validated = $request->validate([
             'student' => ['required', 'exists:students,id'],
@@ -161,7 +161,7 @@ class ParentPortalController extends Controller
     public function wardShow(Student $student): View
     {
         $this->authorizeWard($student);
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
         $wards = $this->wards();
 
         $attendance = $this->attendanceSummary($student);
@@ -208,7 +208,7 @@ class ParentPortalController extends Controller
     public function attendance(Request $request): View
     {
         $ward = $this->selectedWard();
-        abort_unless(! $ward || $this->currentGuardian()?->canAccess('attendance', $ward), 403);
+        abort_unless(! $ward || $this->currentParent()?->canAccess('attendance', $ward), 403);
 
         if (! $ward) {
             return view('portals.parent.attendance', [...$this->viewData(null), 'records' => collect(), 'month' => null]);
@@ -244,7 +244,7 @@ class ParentPortalController extends Controller
     public function absenceRequests(): View
     {
         $ward = $this->selectedWard();
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
 
         return view('portals.parent.absence-requests', [
             ...$this->viewData($ward),
@@ -256,7 +256,7 @@ class ParentPortalController extends Controller
 
     public function absenceRequestsStore(): RedirectResponse
     {
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
         abort_unless((bool) $guardian, 403);
 
         $validated = request()->validate([
@@ -311,7 +311,7 @@ class ParentPortalController extends Controller
     public function homework(): View
     {
         $ward = $this->selectedWard();
-        abort_unless(! $ward || $this->currentGuardian()?->canAccess('academics', $ward), 403);
+        abort_unless(! $ward || $this->currentParent()?->canAccess('academics', $ward), 403);
 
         return view('portals.parent.homework', [
             ...$this->viewData($ward),
@@ -352,7 +352,7 @@ class ParentPortalController extends Controller
     public function academics(): View
     {
         $ward = $this->selectedWard();
-        abort_unless(! $ward || $this->currentGuardian()?->canAccess('academics', $ward), 403);
+        abort_unless(! $ward || $this->currentParent()?->canAccess('academics', $ward), 403);
 
         $grades = $ward ? $this->publishedGrades($ward) : collect();
 
@@ -372,7 +372,7 @@ class ParentPortalController extends Controller
     public function reportCard(): View
     {
         $ward = $this->selectedWard();
-        abort_unless(! $ward || $this->currentGuardian()?->canAccess('academics', $ward), 403);
+        abort_unless(! $ward || $this->currentParent()?->canAccess('academics', $ward), 403);
 
         $grades = $ward ? $this->publishedGrades($ward) : collect();
 
@@ -407,11 +407,11 @@ class ParentPortalController extends Controller
 
         $events = $this->upcomingEvents(30);
 
-        $homework = $ward && $this->currentGuardian()?->canAccess('academics', $ward)
+        $homework = $ward && $this->currentParent()?->canAccess('academics', $ward)
             ? $this->pendingHomework($ward)->where('due_on', '>=', today())->sortBy('due_on')->take(10)
             : collect();
 
-        $assessments = $ward && $this->currentGuardian()?->canAccess('academics', $ward)
+        $assessments = $ward && $this->currentParent()?->canAccess('academics', $ward)
             ? ClassroomAssessment::query()
                 ->where('status', 'published')
                 ->whereNotNull('assessment_date')
@@ -421,8 +421,8 @@ class ParentPortalController extends Controller
                 ->get()
             : collect();
 
-        $meetings = $ward && $this->currentGuardian()?->canAccess('messages', $ward)
-            ? MeetingRequest::query()->where('guardian_id', $this->currentGuardian()->getKey())->where('status', 'confirmed')->get()
+        $meetings = $ward && $this->currentParent()?->canAccess('messages', $ward)
+            ? MeetingRequest::query()->where('guardian_id', $this->currentParent()->getKey())->where('status', 'confirmed')->get()
             : collect();
 
         return view('portals.parent.calendar', [
@@ -497,7 +497,7 @@ class ParentPortalController extends Controller
     public function messages(): View
     {
         $ward = $this->selectedWard();
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
 
         $conversations = TeacherMessage::query()
             ->where(function (Builder $query) {
@@ -547,7 +547,7 @@ class ParentPortalController extends Controller
 
     public function messagesStore(): RedirectResponse
     {
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
         abort_unless((bool) $guardian, 403);
 
         $validated = request()->validate([
@@ -593,7 +593,7 @@ class ParentPortalController extends Controller
     public function meetingRequests(): View
     {
         $ward = $this->selectedWard();
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
 
         return view('portals.parent.meetings', [
             ...$this->viewData($ward),
@@ -620,7 +620,7 @@ class ParentPortalController extends Controller
 
     public function meetingRequestsStore(): RedirectResponse
     {
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
         abort_unless((bool) $guardian, 403);
 
         $validated = request()->validate([
@@ -666,7 +666,7 @@ class ParentPortalController extends Controller
 
     public function meetingRequestCancel(MeetingRequest $meetingRequest): RedirectResponse
     {
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
         abort_unless((string) $meetingRequest->guardian_id === (string) $guardian?->getKey(), 403);
         abort_unless($meetingRequest->status === MeetingRequestStatus::Requested, 403);
 
@@ -680,7 +680,7 @@ class ParentPortalController extends Controller
     public function requests(): View
     {
         $ward = $this->selectedWard();
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
 
         return view('portals.parent.requests', [
             ...$this->viewData($ward),
@@ -692,7 +692,7 @@ class ParentPortalController extends Controller
 
     public function requestsStore(): RedirectResponse
     {
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
         abort_unless((bool) $guardian, 403);
 
         $validated = request()->validate([
@@ -737,7 +737,7 @@ class ParentPortalController extends Controller
     public function documents(): View
     {
         $ward = $this->selectedWard();
-        abort_unless(! $ward || $this->currentGuardian()?->canAccess('documents', $ward), 403);
+        abort_unless(! $ward || $this->currentParent()?->canAccess('documents', $ward), 403);
 
         return view('portals.parent.documents', [
             ...$this->viewData($ward),
@@ -785,7 +785,7 @@ class ParentPortalController extends Controller
 
     public function settings(): View
     {
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
 
         return view('portals.parent.settings', [
             ...$this->viewData(),
@@ -798,7 +798,7 @@ class ParentPortalController extends Controller
 
     public function settingsUpdate(): RedirectResponse
     {
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
         abort_unless((bool) $guardian, 403);
 
         $validated = request()->validate([
