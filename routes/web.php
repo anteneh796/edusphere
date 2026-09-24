@@ -281,15 +281,13 @@ Route::middleware(['auth', 'active', 'force.password'])->group(function () {
 
     Route::middleware(['permission:exams.view'])->name('report-cards.')->group(function () {
         Route::get('report-cards', [ReportCardsController::class, 'index'])->name('index');
-
-        Route::get('report-cards/create', [ReportCardsController::class, 'create'])->name('create');
-        Route::post('report-cards', [ReportCardsController::class, 'generate'])->name('store');
-
         Route::get('report-cards/{reportCard}', [ReportCardsController::class, 'show'])->name('show');
 
-        Route::post('report-cards/{reportCard}/approve', [ReportCardsController::class, 'approve'])
-            ->middleware('permission:exams.edit')
-            ->name('approve');
+        Route::middleware(['permission:exams.edit'])->group(function () {
+            Route::get('report-cards/create', [ReportCardsController::class, 'create'])->name('create');
+            Route::post('report-cards', [ReportCardsController::class, 'generate'])->name('store');
+            Route::post('report-cards/{reportCard}/approve', [ReportCardsController::class, 'approve'])->name('approve');
+        });
 
         Route::post('report-cards/{reportCard}/publish', [ReportCardsController::class, 'publish'])
             ->middleware('permission:exams.publish')
