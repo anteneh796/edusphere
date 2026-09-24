@@ -25,7 +25,6 @@ class AdmissionsModuleTest extends TestCase
             RoleName::Principal->value => 'Principal',
             RoleName::Registrar->value => 'Registrar',
             RoleName::Reception->value => 'Reception',
-            RoleName::FinanceOfficer->value => 'Finance Officer',
             RoleName::Teacher->value => 'Teacher',
         ] as $name => $label) {
             Role::firstOrCreate(['name' => $name], ['label' => $label]);
