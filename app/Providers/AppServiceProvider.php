@@ -43,7 +43,6 @@ use App\Domains\Settings\Models\Setting;
 use App\Domains\Settings\Policies\SettingPolicy;
 use App\Domains\Students\Models\Guardian;
 use App\Domains\Students\Models\Student;
-use App\Domains\Students\Policies\GuardianPolicy;
 use App\Domains\Students\Policies\StudentPolicy;
 use App\Support\Enums\RoleName;
 use Illuminate\Database\Eloquent\Model;
@@ -76,7 +75,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Setting::class, SettingPolicy::class);
         Gate::policy(Student::class, StudentPolicy::class);
-        Gate::policy(Guardian::class, GuardianPolicy::class);
         Gate::policy(Subject::class, SubjectPolicy::class);
         Gate::policy(ClassRoom::class, ClassRoomPolicy::class);
         Gate::policy(GradeLevel::class, GradeLevelPolicy::class);
