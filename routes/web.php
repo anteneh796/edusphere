@@ -55,13 +55,12 @@ use App\Domains\HumanResources\Controllers\ReportsController as HrReportsControl
 use App\Domains\HumanResources\Controllers\StaffAttendanceController;
 use App\Domains\HumanResources\Controllers\TrainingRecordController;
 use App\Domains\Notifications\Controllers\NotificationController;
-use App\Domains\Portals\Controllers\GuardianServicesController;
+use App\Domains\Portals\Controllers\ParentServicesController;
 use App\Domains\Portals\Controllers\ParentPortalController;
 use App\Domains\Portals\Controllers\StudentPortalController;
 use App\Domains\Portals\Controllers\TeacherPortalController;
 use App\Domains\Reports\Controllers\ReportsController;
 use App\Domains\Settings\Controllers\SettingsController;
-use App\Domains\Students\Controllers\GuardianController;
 use App\Domains\Students\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
 
@@ -514,13 +513,13 @@ Route::middleware(['auth', 'active', 'force.password'])->group(function () {
     });
 
 
-    Route::middleware(['permission:parent_services.view'])->name('guardian-services.')->group(function () {
-        Route::get('parent-services/absences', [GuardianServicesController::class, 'absencesIndex'])->name('absences.index');
-        Route::get('parent-services/requests', [GuardianServicesController::class, 'requestsIndex'])->name('requests.index');
+    Route::middleware(['permission:parent_services.view'])->name('parent-services.')->group(function () {
+        Route::get('parent-services/absences', [ParentServicesController::class, 'absencesIndex'])->name('absences.index');
+        Route::get('parent-services/requests', [ParentServicesController::class, 'requestsIndex'])->name('requests.index');
 
         Route::middleware(['permission:parent_services.process'])->group(function () {
-            Route::post('parent-services/absences/{absence}/review', [GuardianServicesController::class, 'absencesReview'])->name('absences.review');
-            Route::post('parent-services/requests/{request}/process', [GuardianServicesController::class, 'requestsProcess'])->name('requests.process');
+            Route::post('parent-services/absences/{absence}/review', [ParentServicesController::class, 'absencesReview'])->name('absences.review');
+            Route::post('parent-services/requests/{request}/process', [ParentServicesController::class, 'requestsProcess'])->name('requests.process');
         });
     });
 
