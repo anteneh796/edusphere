@@ -726,7 +726,7 @@ class ParentPortalController extends Controller
                 'guardian' => $guardian->full_name,
                 'subject' => $validated['subject'],
             ]),
-            'redirect_url' => route('guardian-services.requests.index'),
+            'redirect_url' => route('parent-services.requests.index'),
         ]);
 
         return to_route('cms.parent.requests')->with('status', __('Request submitted.'));
