@@ -5,12 +5,12 @@ $genderOptions = ['male' => 'Male', 'female' => 'Female'];
 $relationshipOptions = [
     'father' => 'Father',
     'mother' => 'Mother',
-    'guardian' => 'Guardian',
+    'guardian' => 'Parent',
     'sibling' => 'Sibling',
 ];
 
-$guardiansBackup = $editing
-    ? $application->guardians->map(fn ($guardian) => [
+$parentsBackup = $editing
+    ? $application->parents->map(fn ($guardian) => [
         'id' => $guardian->id,
         'first_name' => $guardian->first_name,
         'last_name' => $guardian->last_name,
@@ -23,7 +23,7 @@ $guardiansBackup = $editing
         'is_primary' => (bool) $guardian->is_primary,
         'is_emergency' => (bool) $guardian->is_emergency,
     ])->values()->all()
-    : (old('guardians')
+    : (old('parents')
         ? array_map(fn ($row) => [
             'id' => $row['id'] ?? '',
             'first_name' => $row['first_name'] ?? '',
@@ -36,7 +36,7 @@ $guardiansBackup = $editing
             'address' => $row['address'] ?? '',
             'is_primary' => (bool) ($row['is_primary'] ?? false),
             'is_emergency' => (bool) ($row['is_emergency'] ?? false),
-        ], old('guardians'))
+        ], old('parents'))
         : []);
 @endphp
 
@@ -52,7 +52,7 @@ $guardiansBackup = $editing
     <input type="hidden" name="source_inquiry_id" value="{{ $application->source_inquiry_id }}" />
 @endif
 
-<div x-data="guardianSlots(@js($guardiansBackup))">
+<div x-data="parentSlots(@js($parentsBackup))">
 
     <h3 class="section-title">{{ __('Personal details') }}</h3>
 
@@ -97,31 +97,31 @@ $guardiansBackup = $editing
         </div>
     </div>
 
-    <h3 class="section-title">{{ __('Guardians') }}</h3>
+    <h3 class="section-title">{{ __('Parents') }}</h3>
 
-    <template x-for="(guardian, index) in guardians" :key="index">
+    <template x-for="(guardian, index) in parents" :key="index">
         <div class="card" style="margin-bottom: var(--space-2);">
             <div class="card-header">
-                <h3 class="card-title" x-text="`{{ __('Guardian') }} ${index + 1}`"></h3>
+                <h3 class="card-title" x-text="`{{ __('Parent') }} ${index + 1}`"></h3>
                 <div class="card-actions">
-                    <button type="button" class="btn btn-ghost btn-sm" @click="removeGuardian(index)">
+                    <button type="button" class="btn btn-ghost btn-sm" @click="removeParent(index)">
                         <x-icon name="trash" class="icon-sm" />
                     </button>
                 </div>
             </div>
             <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: var(--space-2);">
-                <input type="hidden" :name="`guardians[${index}][id]`" x-model="guardian.id" />
+                <input type="hidden" :name="`parents[${index}][id]`" x-model="guardian.id" />
                 <div class="form-group">
                     <label class="form-label">{{ __('First name') }} <span class="required">*</span></label>
-                    <input type="text" class="form-control" :name="`guardians[${index}][first_name]`" x-model="guardian.first_name" required />
+                    <input type="text" class="form-control" :name="`parents[${index}][first_name]`" x-model="guardian.first_name" required />
                 </div>
                 <div class="form-group">
                     <label class="form-label">{{ __('Last name') }} <span class="required">*</span></label>
-                    <input type="text" class="form-control" :name="`guardians[${index}][last_name]`" x-model="guardian.last_name" required />
+                    <input type="text" class="form-control" :name="`parents[${index}][last_name]`" x-model="guardian.last_name" required />
                 </div>
                 <div class="form-group">
                     <label class="form-label">{{ __('Relationship') }} <span class="required">*</span></label>
-                    <select class="form-select" :name="`guardians[${index}][relationship]`" x-model="guardian.relationship" required>
+                    <select class="form-select" :name="`parents[${index}][relationship]`" x-model="guardian.relationship" required>
                         <option value="">{{ __('Select relationship…') }}</option>
                         @foreach ($relationshipOptions as $value => $label)
                             <option value="{{ $value }}">{{ $label }}</option>
@@ -130,31 +130,31 @@ $guardiansBackup = $editing
                 </div>
                 <div class="form-group">
                     <label class="form-label">{{ __('Phone') }}</label>
-                    <input type="text" class="form-control" :name="`guardians[${index}][phone]`" x-model="guardian.phone" placeholder="+251 9xx xxx xxx" />
+                    <input type="text" class="form-control" :name="`parents[${index}][phone]`" x-model="guardian.phone" placeholder="+251 9xx xxx xxx" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">{{ __('Email') }}</label>
-                    <input type="email" class="form-control" :name="`guardians[${index}][email]`" x-model="guardian.email" placeholder="{{ __('Optional') }}" />
+                    <input type="email" class="form-control" :name="`parents[${index}][email]`" x-model="guardian.email" placeholder="{{ __('Optional') }}" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">{{ __('Occupation') }}</label>
-                    <input type="text" class="form-control" :name="`guardians[${index}][occupation]`" x-model="guardian.occupation" placeholder="{{ __('Optional') }}" />
+                    <input type="text" class="form-control" :name="`parents[${index}][occupation]`" x-model="guardian.occupation" placeholder="{{ __('Optional') }}" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">{{ __('National ID') }}</label>
-                    <input type="text" class="form-control" :name="`guardians[${index}][national_id]`" x-model="guardian.national_id" placeholder="{{ __('Optional') }}" />
+                    <input type="text" class="form-control" :name="`parents[${index}][national_id]`" x-model="guardian.national_id" placeholder="{{ __('Optional') }}" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">{{ __('Address') }}</label>
-                    <input type="text" class="form-control" :name="`guardians[${index}][address]`" x-model="guardian.address" placeholder="{{ __('Optional') }}" />
+                    <input type="text" class="form-control" :name="`parents[${index}][address]`" x-model="guardian.address" placeholder="{{ __('Optional') }}" />
                 </div>
                 <div class="form-group" style="grid-column: 1 / -1;">
                     <label class="form-check">
-                        <input type="checkbox" :name="`guardians[${index}][is_primary]`" value="1" :checked="guardian.is_primary" @change="setPrimary(index, $event.target.checked)" />
+                        <input type="checkbox" :name="`parents[${index}][is_primary]`" value="1" :checked="guardian.is_primary" @change="setPrimary(index, $event.target.checked)" />
                         <span>{{ __('Primary guardian') }}</span>
                     </label>
                     <label class="form-check" style="margin-left: var(--space-3);">
-                        <input type="checkbox" :name="`guardians[${index}][is_emergency]`" value="1" x-model="guardian.is_emergency" />
+                        <input type="checkbox" :name="`parents[${index}][is_emergency]`" value="1" x-model="guardian.is_emergency" />
                         <span>{{ __('Emergency contact') }}</span>
                     </label>
                 </div>
@@ -163,7 +163,7 @@ $guardiansBackup = $editing
     </template>
 
     <div class="form-group">
-        <button type="button" class="btn btn-secondary btn-sm" @click="addGuardian()">
+        <button type="button" class="btn btn-secondary btn-sm" @click="addParent()">
             <x-icon name="plus" class="icon-sm" />
             {{ __('Add another guardian') }}
         </button>
@@ -172,32 +172,32 @@ $guardiansBackup = $editing
 </div>
 
 <script>
-    function guardianSlots(initial) {
+    function parentSlots(initial) {
         return {
-            guardians: initial.length ? initial : [guardianSlots.empty()],
-            addGuardian() {
-                this.guardians.push(guardianSlots.empty());
+            parents: initial.length ? initial : [parentSlots.empty()],
+            addParent() {
+                this.parents.push(parentSlots.empty());
             },
-            removeGuardian(index) {
-                if (this.guardians.length > 1) {
-                    this.guardians.splice(index, 1);
+            removeParent(index) {
+                if (this.parents.length > 1) {
+                    this.parents.splice(index, 1);
                 }
             },
             setPrimary(index, checked) {
                 if (! checked) {
                     return;
                 }
-                this.guardians.forEach((guardian, i) => {
+                this.parents.forEach((guardian, i) => {
                     guardian.is_primary = i === index;
                 });
             }
         };
     }
-    guardianSlots.empty = function () {
+    parentSlots.empty = function () {
         return {
             id: '', first_name: '', last_name: '', relationship: '', phone: '', email: '',
             occupation: '', national_id: '', address: '', is_primary: false, is_emergency: false
         };
     };
-    window.guardianSlots = guardianSlots;
+    window.parentSlots = parentSlots;
 </script>
