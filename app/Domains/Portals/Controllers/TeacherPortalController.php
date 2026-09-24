@@ -263,7 +263,12 @@ class TeacherPortalController extends Controller
                 ->withErrors(['records' => __('This session is closed and can no longer be edited.')]);
         }
 
-        (new AttendanceService)->upsertRecords($session, auth()->id(), $validated['records']);
+        try {
+            (new AttendanceService)->upsertRecords($session, auth()->id(), $validated['records']);
+        } catch (\DomainException $e) {
+            return to_route('cms.teacher.attendance.session', $session)
+                ->withErrors(['records' => $e->getMessage()]);
+        }
 
         return to_route('cms.teacher.attendance.session', $session)->with('status', __('Attendance saved.'));
     }
@@ -299,12 +304,17 @@ class TeacherPortalController extends Controller
                 ->withErrors(['correction' => __('No attendance record found for that student.')]);
         }
 
-        (new AttendanceService)->requestCorrection(
-            $record,
-            $request->validated('requested_status'),
-            $request->validated('reason'),
-            auth()->id()
-        );
+        try {
+            (new AttendanceService)->requestCorrection(
+                $record,
+                $request->validated('requested_status'),
+                $request->validated('reason'),
+                auth()->id()
+            );
+        } catch (\DomainException $e) {
+            return to_route('cms.teacher.attendance.session', $session)
+                ->withErrors(['correction' => $e->getMessage()]);
+        }
 
         ActivityLogger::log(
             'requested an attendance correction for '.($record->student?->full_name ?? 'student'),
