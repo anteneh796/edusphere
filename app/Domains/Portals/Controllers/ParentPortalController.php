@@ -40,7 +40,7 @@ use Illuminate\View\View;
 
 class ParentPortalController extends Controller
 {
-    private function currentParent(): ?Guardian
+    private function currentParent(): ?\App\Domains\Students\Models\Guardian
     {
         $user = auth()->user();
 
