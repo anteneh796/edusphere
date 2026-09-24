@@ -27,7 +27,6 @@
                     </a>
                     <a href="{{ route('cms.parent.attendance') }}" class="btn btn-ghost btn-sm">{{ __('Attendance') }}</a>
                     <a href="{{ route('cms.parent.academics') }}" class="btn btn-ghost btn-sm">{{ __('Grades') }}</a>
-                    <a href="{{ route('cms.parent.billing') }}" class="btn btn-ghost btn-sm">{{ __('Fees') }}</a>
                 </div>
             </x-card>
         @empty
