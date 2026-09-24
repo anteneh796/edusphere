@@ -52,6 +52,9 @@ class AttendanceController extends Controller
             ->withQueryString();
 
         $classes = $this->classesForYear($currentYear->getKey());
+        if ($this->isTeacher()) {
+            $classes = $classes->whereIn('id', $this->teacherClassRoomIds())->values();
+        }
 
         $openCount = AttendanceSession::query()
             ->open()
@@ -72,6 +75,9 @@ class AttendanceController extends Controller
         $currentYear = $this->attendanceService->currentYear();
 
         $classes = $this->classesForYear($currentYear->getKey());
+        if ($this->isTeacher()) {
+            $classes = $classes->whereIn('id', $this->teacherClassRoomIds())->values();
+        }
 
         $today = Carbon::today()->format('Y-m-d');
 
