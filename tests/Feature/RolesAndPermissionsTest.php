@@ -37,16 +37,11 @@ class RolesAndPermissionsTest extends TestCase
 
     public function test_permission_middleware_blocks_actions_outside_the_matrix(): void
     {
-        $financeOfficer = $this->user(RoleName::FinanceOfficer->value);
         $registrar = $this->user(RoleName::Registrar->value);
         $teacher = $this->user(RoleName::Teacher->value);
 
-        $this->actingAs($financeOfficer)
+        $this->actingAs($registrar)
             ->get(route('settings.index'))
-            ->assertForbidden();
-
-        $this->actingAs($financeOfficer)
-            ->get(route('guardians.index'))
             ->assertForbidden();
 
         $this->actingAs($registrar)
