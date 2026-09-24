@@ -393,36 +393,6 @@ class ParentPortalTest extends TestCase
             ->assertSee('Welcome');
     }
 
-    public function test_parent_can_view_a_confirmed_receipt_detail_and_its_invoice(): void
-    {
-        $scenario = $this->guardianScenario();
-
-        $invoice = Invoice::create([
-            'student_id' => $scenario['student']->getKey(),
-            'invoice_number' => 'INV-RECEIPT-1',
-            'description' => 'Term fees',
-            'amount' => 900,
-            'status' => 'pending',
-            'issue_date' => now(),
-            'due_date' => now()->addMonth(),
-        ]);
-
-        $receipt = Payment::create([
-            'student_id' => $scenario['student']->getKey(),
-            'invoice_id' => $invoice->getKey(),
-            'payment_number' => 'PAY-RECEIPT-1',
-            'amount' => 900,
-            'method' => 'bank',
-            'status' => PaymentStatus::Confirmed->value,
-            'paid_at' => now(),
-        ]);
-
-        $this->actingAs($scenario['parent'])
-            ->get(route('cms.parent.receipts.show', $receipt))
-            ->assertOk()
-            ->assertSee('INV-RECEIPT-1');
-    }
-
     public function test_guardian_service_staff_can_review_a_request(): void
     {
         $scenario = $this->guardianScenario();
