@@ -10,6 +10,7 @@ use App\Domains\HumanResources\Models\EmploymentContract;
 use App\Domains\HumanResources\Models\LeaveRequest;
 use App\Domains\HumanResources\Models\LeaveType;
 use App\Domains\HumanResources\Models\StaffAttendance;
+use App\Support\Enums\EmploymentStatus;
 use App\Support\Enums\LeaveRequestStatus;
 use App\Support\Enums\RoleName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -204,7 +205,8 @@ class HrModuleTest extends TestCase
             ->delete(route('hr.employees.destroy', $employee))
             ->assertRedirect(route('hr.employees.index'));
 
-        $this->assertNull(Employee::find($employee->getKey()));
-        $this->assertNotNull(Employee::withTrashed()->find($employee->getKey()), 'Record should be soft-deleted only.');
+        $employee->refresh();
+        $this->assertSame(EmploymentStatus::Terminated->value, $employee->employment_status);
+        $this->assertNotNull(Employee::find($employee->getKey()), 'Archived employee records must remain queryable.');
     }
 }
