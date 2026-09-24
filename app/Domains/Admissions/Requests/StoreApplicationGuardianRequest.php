@@ -4,7 +4,7 @@ namespace App\Domains\Admissions\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreApplicationGuardianRequest extends FormRequest
+class StoreApplicationParentRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -30,9 +30,9 @@ class StoreApplicationGuardianRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'first_name' => __('guardian first name'),
-            'last_name' => __('guardian last name'),
-            'relationship' => __('guardian relationship'),
+            'first_name' => __('parent first name'),
+            'last_name' => __('parent last name'),
+            'relationship' => __('parent relationship'),
         ];
     }
 }
