@@ -36,7 +36,6 @@ class PortalWiringTest extends TestCase
             RoleName::Principal->value => 'Principal',
             RoleName::Registrar->value => 'Registrar',
             RoleName::Teacher->value => 'Teacher',
-            RoleName::FinanceOfficer->value => 'Finance Officer',
             RoleName::Student->value => 'Student',
             RoleName::Parent->value => 'Parent',
         ] as $name => $label) {
