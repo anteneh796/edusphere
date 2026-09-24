@@ -24,7 +24,9 @@ class EmploymentContractFactory extends Factory
             'position_id' => Position::factory(),
             'department_id' => Department::factory(),
             'start_date' => $start = fake()->dateTimeBetween('-2 years', 'now')->format('Y-m-d'),
-            'end_date' => fake()->optional(0.7)->dateTimeBetween($start, '+2 years')?->format('Y-m-d'),
+             'end_date' => ($endDate = fake()->optional(0.7)->dateTimeBetween($start, '+2 years')) !== null
+                ? $endDate->format('Y-m-d')
+                : null,
             'salary_grade' => fake()->optional()->randomElement(['A1', 'A2', 'B1', 'B2', 'C1']),
             'basic_salary' => fake()->optional()->numberBetween(15000, 90000),
             'working_hours_per_week' => fake()->optional()->randomElement([20, 25, 30, 40]),
