@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Domains\Academics\Models\AcademicYear;
 use App\Domains\Academics\Models\ClassRoom;
 use App\Domains\Academics\Models\GradeLevel;
+use App\Domains\Academics\Models\ClassSubject;
+use App\Domains\Academics\Models\Subject;
 use App\Domains\Accounts\Models\Role;
 use App\Domains\Accounts\Models\User;
 use App\Domains\Attendance\Models\AttendanceRecord;
