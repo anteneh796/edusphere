@@ -39,7 +39,7 @@ class AdmissionApplicationController extends Controller
         return view('admissions.applications.index', [
             'applications' => $applications,
             'statusOptions' => AdmissionStatus::cases(),
-            'gradeLevels' => GradeLevel::ordered()->get(),
+            'gradeLevels' => GradeLevel::active()->ordered()->get(),
             'kpis' => $this->dashboardService->kpis(),
         ]);
     }
@@ -59,7 +59,7 @@ class AdmissionApplicationController extends Controller
 
         return view('admissions.applications.applicants', [
             'applications' => $applications,
-            'gradeLevels' => GradeLevel::ordered()->get(),
+            'gradeLevels' => GradeLevel::active()->ordered()->get(),
         ]);
     }
 
@@ -242,7 +242,7 @@ class AdmissionApplicationController extends Controller
             default => 'Application placed on the waiting list.',
         };
 
-        return redirect()->route('admissions.applications.show', $application)->with('status', $message)->setStatusCode(201);
+        return redirect()->route('admissions.applications.show', $application)->with('status', $message);
     }
 
     public function waitlist(Request $request, AdmissionApplication $application): RedirectResponse
@@ -293,6 +293,6 @@ class AdmissionApplicationController extends Controller
             return back()->withErrors($e->errors());
         }
 
-        return redirect()->route('admissions.applications.show', $application)->with('status', $success)->setStatusCode(201);
+        return redirect()->route('admissions.applications.show', $application)->with('status', $success);
     }
 }
