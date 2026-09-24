@@ -3,6 +3,7 @@
 namespace App\Domains\Admissions\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateAdmissionApplicationRequest extends FormRequest
 {
@@ -23,7 +24,7 @@ class UpdateAdmissionApplicationRequest extends FormRequest
             'address' => ['nullable', 'string', 'max:255'],
             'previous_school' => ['nullable', 'string', 'max:150'],
             'intake_academic_year_id' => ['nullable', 'exists:academic_years,id'],
-            'grade_level_id' => ['nullable', 'exists:grade_levels,id'],
+            'grade_level_id' => ['nullable', Rule::exists('grade_levels', 'id')->where(fn ($query) => $query->where('is_active', true)->whereNotNull('stage'))],
             'guardians' => ['nullable', 'array', 'min:1'],
             'guardians.*.id' => ['nullable', 'exists:application_guardians,id'],
             'guardians.*.first_name' => ['required', 'string', 'max:100'],
