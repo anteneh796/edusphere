@@ -74,8 +74,8 @@ class AdmissionService
     public function createApplication(array $data, ?Inquiry $sourceInquiry = null, string $status = AdmissionStatus::Draft->value): AdmissionApplication
     {
         $application = DB::transaction(function () use ($data, $sourceInquiry, $status) {
-            $guardians = $data['guardians'] ?? [];
-            unset($data['guardians'], $data['source_inquiry_id']);
+            $parents = $data['parents'] ?? [];
+            unset($data['parents'], $data['source_inquiry_id']);
             $this->validatePlacement($data['grade_level_id'] ?? null, $data['intake_academic_year_id'] ?? $this->currentYearId());
 
             $application = AdmissionApplication::create([
@@ -88,7 +88,7 @@ class AdmissionService
                 'created_by' => auth()->id(),
             ]);
 
-            $this->syncGuardians($application, $guardians);
+            $this->syncParents($application, $parents);
 
             return $application;
         });
@@ -103,7 +103,7 @@ class AdmissionService
                 ]))
         );
 
-        return $application->fresh(['gradeLevel', 'intakeYear', 'primaryGuardian', 'sourceInquiry']);
+        return $application->fresh(['gradeLevel', 'intakeYear', 'primaryParent', 'sourceInquiry']);
     }
     public function createDraftFromInquiry(Inquiry $inquiry, string $gradeLevelId, string $academicYearId): AdmissionApplication
     {
@@ -161,7 +161,7 @@ class AdmissionService
                 $application->guardians()->create([
                     'first_name' => $guardianFirst,
                     'last_name' => $guardianLast,
-                    'relationship' => 'guardian',
+                    'relationship' => 'father',
                     'phone' => $inquiry->phone,
                     'email' => $inquiry->email,
                     'is_primary' => true,
@@ -191,7 +191,7 @@ class AdmissionService
             )
         );
 
-        return $application->fresh(['gradeLevel', 'intakeYear', 'primaryGuardian', 'sourceInquiry']);
+        return $application->fresh(['gradeLevel', 'intakeYear', 'primaryParent', 'sourceInquiry']);
     }
 
     private function validatePlacement(?string $gradeLevelId, ?string $academicYearId): void
@@ -218,8 +218,8 @@ class AdmissionService
 
     public function updateApplication(AdmissionApplication $application, array $data): AdmissionApplication
     {
-        $guardians = $data['guardians'] ?? null;
-        unset($data['guardians']);
+        $parents = $data['parents'] ?? null;
+        unset($data['parents']);
 
         $this->validatePlacement(
             $data['grade_level_id'] ?? $application->grade_level_id,
@@ -228,11 +228,11 @@ class AdmissionService
 
         $application->update($data);
 
-        if ($guardians !== null) {
-            $this->syncGuardians($application, $guardians);
+        if ($parents !== null) {
+            $this->syncParents($application, $parents);
         }
 
-        return $application->fresh(['gradeLevel', 'intakeYear', 'primaryGuardian']);
+        return $application->fresh(['gradeLevel', 'intakeYear', 'primaryParent']);
     }
 
     public function submit(AdmissionApplication $application): void
@@ -497,7 +497,7 @@ class AdmissionService
     {
         [$student, $application, $parent, $grade] = DB::transaction(function () use ($application) {
             $application = AdmissionApplication::query()
-                ->with(['intakeYear', 'gradeLevel', 'guardians'])
+                ->with(['intakeYear', 'gradeLevel', 'parents'])
                 ->lockForUpdate()
                 ->findOrFail($application->getKey());
 
@@ -557,7 +557,7 @@ class AdmissionService
                 ]);
             }
 
-            $this->linkGuardians($application, $student, $parent);
+            $this->linkParents($application, $student, $parent);
 
             $application->update([
                 'status' => AdmissionStatus::Enrolled->value,
@@ -596,7 +596,7 @@ class AdmissionService
     }
     private function createParentUser(AdmissionApplication $application): ?User
     {
-        $guardian = $application->primaryGuardian;
+        $guardian = $application->primaryParent;
 
         if (! $guardian || ! $guardian->email) {
             return null;
@@ -624,7 +624,7 @@ class AdmissionService
         return $user;
     }
 
-    private function linkGuardians(AdmissionApplication $application, Student $student, ?User $parentUser): void
+    private function linkParents(AdmissionApplication $application, Student $student, ?User $parentUser): void
     {
         foreach ($application->guardians as $index => $guardian) {
             $record = Guardian::create([
@@ -747,37 +747,37 @@ class AdmissionService
         ];
     }
 
-    private function syncGuardians(AdmissionApplication $application, array $guardians): void
+    private function syncParents(AdmissionApplication $application, array $parents): void
     {
-        if (empty($guardians)) {
+        if (empty($parents)) {
             return;
         }
 
         $keep = [];
 
-        foreach ($guardians as $entry) {
+        foreach ($parents as $entry) {
             $id = $entry['id'] ?? null;
 
             if ($id && $application->guardians()->whereKey($id)->exists()) {
-                $application->guardians()->whereKey($id)->update($this->guardianFields($entry));
+                $application->guardians()->whereKey($id)->update($this->parentFields($entry));
                 $keep[] = $id;
 
                 continue;
             }
 
             unset($entry['id']);
-            $keep[] = $application->guardians()->create($this->guardianFields($entry))->getKey();
+            $keep[] = $application->guardians()->create($this->parentFields($entry))->getKey();
         }
 
         $application->guardians()->whereNotIn('id', $keep)->delete();
     }
 
-    private function guardianFields(array $entry): array
+    private function parentFields(array $entry): array
     {
         return [
             'first_name' => $entry['first_name'] ?? null,
             'last_name' => $entry['last_name'] ?? null,
-            'relationship' => $entry['relationship'] ?? 'guardian',
+            'relationship' => $entry['relationship'] ?? 'father',
             'phone' => $entry['phone'] ?? null,
             'email' => $entry['email'] ?? null,
             'occupation' => $entry['occupation'] ?? null,
