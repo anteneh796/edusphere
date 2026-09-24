@@ -4,7 +4,6 @@ namespace App\Domains\Attendance\Services;
 
 use App\Domains\Academics\Models\AcademicYear;
 use App\Domains\Academics\Models\ClassRoom;
-use App\Domains\Academics\Models\ClassSubject;
 use App\Domains\Attendance\Models\AttendanceCorrection;
 use App\Domains\Attendance\Models\AttendanceRecord;
 use App\Domains\Attendance\Models\AttendanceSession;
@@ -264,12 +263,13 @@ class AttendanceService
 
     /* ------------------------------- Dashboard -------------------------------- */
 
-    public function todayStats(): array
+    public function todayStats(?array $classRoomIds = null): array
     {
         $today = Carbon::today()->toDateString();
 
         $sessions = AttendanceSession::with(['classRoom.gradeLevel', 'records'])
             ->whereDate('date', $today)
+            ->when($classRoomIds !== null, fn ($query) => $query->whereIn('class_room_id', $classRoomIds))
             ->orderByDesc('created_at')
             ->get();
 
@@ -691,11 +691,12 @@ class AttendanceService
 
     /* --------------------------------- Alerts ---------------------------------- */
 
-    public function studentAlerts(int $absentThreshold = 3, int $lateThreshold = 5): Collection
+    public function studentAlerts(int $absentThreshold = 3, int $lateThreshold = 5, ?array $classRoomIds = null): Collection
     {
         $since = Carbon::now()->startOfMonth()->toDateString();
 
         $students = Student::with('classRoom.gradeLevel')
+            ->when($classRoomIds !== null, fn ($query) => $query->whereIn('class_room_id', $classRoomIds))
             ->whereHas('attendanceRecords', fn ($query) => $query->whereHas('session', fn ($q) => $q->whereDate('date', '>=', $since)))
             ->withCount([
                 'attendanceRecords as absent_count' => fn ($query) => $query
