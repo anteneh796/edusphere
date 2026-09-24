@@ -56,6 +56,22 @@ class AttendanceModuleTest extends TestCase
         $user = User::factory()->create();
         $user->roles()->attach(Role::where('name', $roleName)->first());
 
+        if ($roleName === RoleName::Teacher->value) {
+            $subject = Subject::create([
+                'name' => 'Mathematics',
+                'code' => 'MAT-'.str()->random(6),
+            ]);
+
+            ClassSubject::create([
+                'class_room_id' => $this->classId,
+                'subject_id' => $subject->getKey(),
+                'teacher_id' => $user->getKey(),
+                'periods_per_week' => 5,
+                'position' => 1,
+                'is_homeroom' => true,
+            ]);
+        }
+
         return $user;
     }
 
