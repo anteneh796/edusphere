@@ -76,6 +76,7 @@ class AdmissionService
         $application = DB::transaction(function () use ($data, $sourceInquiry, $status) {
             $guardians = $data['guardians'] ?? [];
             unset($data['guardians'], $data['source_inquiry_id']);
+            $this->validatePlacement($data['grade_level_id'] ?? null, $data['intake_academic_year_id'] ?? $this->currentYearId());
 
             $application = AdmissionApplication::create([
                 ...$data,
@@ -191,6 +192,28 @@ class AdmissionService
         );
 
         return $application->fresh(['gradeLevel', 'intakeYear', 'primaryGuardian', 'sourceInquiry']);
+    }
+
+    private function validatePlacement(?string $gradeLevelId, ?string $academicYearId): void
+    {
+        if ($gradeLevelId === null || $academicYearId === null) {
+            throw ValidationException::withMessages([
+                'placement' => __('An admission must have an intake academic year and an eligible KG through Grade 8 grade.'),
+            ]);
+        }
+
+        $grade = GradeLevel::query()->whereKey($gradeLevelId)->first();
+        if (! $grade || ! $grade->is_active || $grade->stage === null) {
+            throw ValidationException::withMessages([
+                'grade_level_id' => __('The selected grade is not an eligible EduSphere admission grade.'),
+            ]);
+        }
+
+        if (! AcademicYear::query()->whereKey($academicYearId)->exists()) {
+            throw ValidationException::withMessages([
+                'intake_academic_year_id' => __('The selected academic year is invalid.'),
+            ]);
+        }
     }
 
     public function updateApplication(AdmissionApplication $application, array $data): AdmissionApplication
