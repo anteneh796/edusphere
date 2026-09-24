@@ -8,8 +8,6 @@ use App\Domains\Academics\Models\ClassSubject;
 use App\Domains\Academics\Models\Subject;
 use App\Domains\Accounts\Models\Role;
 use App\Domains\Accounts\Models\User;
-use App\Domains\Finance\Models\Invoice;
-use App\Domains\Finance\Models\Payment;
 use App\Domains\Notifications\Models\Notification;
 use App\Domains\ParentPortal\Models\AbsenceRequest;
 use App\Domains\ParentPortal\Models\MeetingRequest;
@@ -20,7 +18,6 @@ use App\Domains\TeacherPortal\Models\TeacherMessage;
 use App\Support\Enums\AbsenceRequestStatus;
 use App\Support\Enums\MeetingRequestStatus;
 use App\Support\Enums\ParentRequestStatus;
-use App\Support\Enums\PaymentStatus;
 use App\Support\Enums\RoleName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -243,62 +240,7 @@ class ParentPortalTest extends TestCase
         ]);
     }
 
-    public function test_billing_is_gated_by_relationship_permission(): void
-    {
-        $withoutFinance = $this->guardianScenario(finance: false);
-        $withFinance = $this->guardianScenario(finance: true);
 
-        $this->actingAs($withoutFinance['parent'])
-            ->get(route('cms.parent.billing'))
-            ->assertForbidden();
-
-        $this->actingAs($withFinance['parent'])
-            ->get(route('cms.parent.billing'))
-            ->assertOk();
-    }
-
-    public function test_parent_can_view_receipts_for_confirmed_payments_only(): void
-    {
-        $scenario = $this->guardianScenario();
-
-        $invoice = Invoice::create([
-            'student_id' => $scenario['student']->getKey(),
-            'invoice_number' => 'INV-TEST-1',
-            'description' => 'Term fees',
-            'amount' => 1000,
-            'status' => 'partial',
-            'issue_date' => now(),
-            'due_date' => now()->addMonth(),
-        ]);
-
-        $confirmed = Payment::create([
-            'student_id' => $scenario['student']->getKey(),
-            'invoice_id' => $invoice->getKey(),
-            'payment_number' => 'PAY-TEST-1',
-            'amount' => 400,
-            'method' => 'cash',
-            'status' => PaymentStatus::Confirmed->value,
-            'paid_at' => now(),
-        ]);
-
-        $pending = Payment::create([
-            'student_id' => $scenario['student']->getKey(),
-            'invoice_id' => $invoice->getKey(),
-            'payment_number' => 'PAY-TEST-2',
-            'amount' => 200,
-            'method' => 'cash',
-            'status' => PaymentStatus::Pending->value,
-            'paid_at' => null,
-        ]);
-
-        $this->actingAs($scenario['parent'])
-            ->get(route('cms.parent.receipts.show', $confirmed))
-            ->assertOk();
-
-        $this->actingAs($scenario['parent'])
-            ->get(route('cms.parent.receipts.show', $pending))
-            ->assertNotFound();
-    }
 
     public function test_parent_can_mark_all_notifications_as_read(): void
     {
@@ -358,47 +300,6 @@ class ParentPortalTest extends TestCase
         ]);
     }
 
-    public function test_finance_officer_can_confirm_a_pending_payment_and_invoice_refreshes(): void
-    {
-        $scenario = $this->guardianScenario();
-
-        $invoice = Invoice::create([
-            'student_id' => $scenario['student']->getKey(),
-            'invoice_number' => 'INV-TEST-2',
-            'description' => 'Tuition',
-            'amount' => 1000,
-            'status' => 'pending',
-            'issue_date' => now(),
-            'due_date' => now()->addMonth(),
-        ]);
-
-        $payment = Payment::create([
-            'student_id' => $scenario['student']->getKey(),
-            'invoice_id' => $invoice->getKey(),
-            'payment_number' => 'PAY-TEST-3',
-            'amount' => 1000,
-            'method' => 'bank',
-            'status' => PaymentStatus::Pending->value,
-            'paid_at' => null,
-        ]);
-
-        $finance = User::factory()->create(['status' => 'active']);
-        $finance->roles()->attach(Role::where('name', RoleName::FinanceOfficer->value)->firstOrFail());
-
-        $this->actingAs($finance)
-            ->post(route('finance.payments.confirm', $payment))
-            ->assertRedirect(route('finance.payments.index'));
-
-        $this->assertDatabaseHas('payments', [
-            'id' => $payment->getKey(),
-            'status' => PaymentStatus::Confirmed->value,
-        ]);
-
-        $this->assertDatabaseHas('invoices', [
-            'id' => $invoice->getKey(),
-            'status' => 'paid',
-        ]);
-    }
 
     public function test_parent_can_open_all_portal_pages(): void
     {
@@ -406,7 +307,7 @@ class ParentPortalTest extends TestCase
 
         $this->actingAs($scenario['parent']);
 
-        foreach (['dashboard', 'wards', 'attendance', 'absence-requests', 'homework', 'academics', 'report-card', 'calendar', 'announcements', 'messages', 'meetings', 'billing', 'requests', 'documents', 'notifications', 'settings'] as $page) {
+        foreach (['dashboard', 'wards', 'attendance', 'absence-requests', 'homework', 'academics', 'report-card', 'calendar', 'announcements', 'messages', 'meetings', 'requests', 'documents', 'notifications', 'settings'] as $page) {
             $this->get(route('cms.parent.'.$page))->assertOk();
         }
 
@@ -427,19 +328,6 @@ class ParentPortalTest extends TestCase
             ->assertOk();
     }
 
-    public function test_finance_officer_can_open_finance_pages(): void
-    {
-        $finance = User::factory()->create(['status' => 'active']);
-        $finance->roles()->attach(Role::where('name', RoleName::FinanceOfficer->value)->firstOrFail());
-
-        $this->actingAs($finance)
-            ->get(route('finance.invoices.index'))
-            ->assertOk();
-
-        $this->actingAs($finance)
-            ->get(route('finance.payments.index'))
-            ->assertOk();
-    }
 
     public function test_teacher_can_review_meeting_requests_page(): void
     {
