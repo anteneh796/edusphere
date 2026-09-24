@@ -221,6 +221,11 @@ class AdmissionService
         $guardians = $data['guardians'] ?? null;
         unset($data['guardians']);
 
+        $this->validatePlacement(
+            $data['grade_level_id'] ?? $application->grade_level_id,
+            $data['intake_academic_year_id'] ?? $application->intake_academic_year_id,
+        );
+
         $application->update($data);
 
         if ($guardians !== null) {
