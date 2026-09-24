@@ -58,9 +58,10 @@ class AttendancePolicy
 
     private function teacherOwnsClass(User $user, AttendanceSession $session): bool
     {
-        return ClassSubject::query()
-            ->where('teacher_id', $user->getKey())
-            ->where('class_room_id', $session->class_room_id)
-            ->exists();
+        return (string) $session->taken_by_id === (string) $user->getKey()
+            || ClassSubject::query()
+                ->where('teacher_id', $user->getKey())
+                ->where('class_room_id', $session->class_room_id)
+                ->exists();
     }
 }
