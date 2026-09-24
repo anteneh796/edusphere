@@ -166,7 +166,7 @@ class AdmissionsModuleTest extends TestCase
 
         $this->actingAs($registrar)
             ->post(route('admissions.applications.enroll', $application))
-            ->assertSuccessful();
+            ->assertRedirect();
 
         $application->refresh();
 
