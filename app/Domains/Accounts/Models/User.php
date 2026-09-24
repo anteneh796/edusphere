@@ -4,7 +4,7 @@ namespace App\Domains\Accounts\Models;
 
 use App\Domains\Notifications\Models\Notification;
 use App\Domains\Settings\Models\Setting;
-use App\Domains\Students\Models\Parent;
+use App\Domains\Students\Models\ParentProfile;
 use App\Domains\Students\Models\Student;
 use App\Support\Enums\RoleName;
 use App\Support\Enums\UserStatus;
@@ -188,7 +188,7 @@ class User extends Authenticatable
 
     public function parent(): HasOne
     {
-        return $this->hasOne(Parent::class, 'user_id');
+        return $this->hasOne(ParentProfile::class, 'user_id');
     }
 
     /** @deprecated Use parent() for the unified family portal. */
