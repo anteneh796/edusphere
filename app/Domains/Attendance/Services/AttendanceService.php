@@ -4,6 +4,7 @@ namespace App\Domains\Attendance\Services;
 
 use App\Domains\Academics\Models\AcademicYear;
 use App\Domains\Academics\Models\ClassRoom;
+use App\Domains\Academics\Models\ClassSubject;
 use App\Domains\Attendance\Models\AttendanceCorrection;
 use App\Domains\Attendance\Models\AttendanceRecord;
 use App\Domains\Attendance\Models\AttendanceSession;
@@ -29,14 +30,23 @@ class AttendanceService
     {
         $date = $date instanceof Carbon ? $date : Carbon::parse($date);
         $date = $date->startOfDay();
+        $currentYear = $this->currentYear();
 
-        return DB::transaction(function () use ($class, $date, $takenById) {
+        if ((string) $class->academic_year_id !== (string) $currentYear->getKey()) {
+            throw new \DomainException('Attendance can only be recorded for a class in the current academic year.');
+        }
+
+        if ($date->isFuture()) {
+            throw new \DomainException('Attendance cannot be recorded for a future date.');
+        }
+
+        return DB::transaction(function () use ($class, $date, $takenById, $currentYear) {
             return AttendanceSession::query()
                 ->lockForUpdate()
                 ->firstOrCreate(
                     ['class_room_id' => $class->getKey(), 'date' => $date],
                     [
-                        'academic_year_id' => $this->currentYear()->getKey(),
+                        'academic_year_id' => $currentYear->getKey(),
                         'taken_by_id' => $takenById,
                         'status' => AttendanceSessionStatus::Open->value,
                         'opened_at' => now(),
@@ -60,6 +70,16 @@ class AttendanceService
 
                 if (! $studentId || empty($row['status'])) {
                     continue;
+                }
+
+                $studentBelongsToClass = Student::query()
+                    ->whereKey($studentId)
+                    ->where('class_room_id', $lockedSession->class_room_id)
+                    ->where('academic_year_id', $lockedSession->academic_year_id)
+                    ->exists();
+
+                if (! $studentBelongsToClass) {
+                    throw new \DomainException('The selected student does not belong to this attendance class for the session academic year.');
                 }
 
                 AttendanceRecord::updateOrCreate(
@@ -174,7 +194,7 @@ class AttendanceService
             }
 
             $resolved = $rows->map(function (array $row) {
-                $student = $this->resolveStudent($row);
+                $student = $this->resolveStudent($row, $class);
 
                 return [
                     'student_id' => $student?->getKey(),
@@ -573,10 +593,33 @@ class AttendanceService
     public function requestCorrection(AttendanceRecord $record, string $status, string $reason, string $requestedById): AttendanceCorrection
     {
         return DB::transaction(function () use ($record, $status, $reason, $requestedById) {
-            $record = AttendanceRecord::query()->lockForUpdate()->findOrFail($record->getKey());
+            $record = AttendanceRecord::query()
+                ->with('session')
+                ->lockForUpdate()
+                ->findOrFail($record->getKey());
+
+            if (! $record->session?->isLocked()) {
+                throw new \DomainException('Attendance corrections can only be requested for locked sessions.');
+            }
 
             $current = $record->status instanceof AttendanceStatus ? $record->status->value : $record->status;
             $requested = $status instanceof AttendanceStatus ? $status->value : $status;
+
+            if (! in_array($requested, AttendanceStatus::values(), true)) {
+                throw new \DomainException('Invalid attendance status.');
+            }
+
+            if ($current === $requested) {
+                throw new \DomainException('The requested status is already recorded.');
+            }
+
+            if (AttendanceCorrection::query()
+                ->where('attendance_record_id', $record->getKey())
+                ->pending()
+                ->exists()) {
+                throw new \DomainException('A correction request is already pending for this attendance record.');
+            }
+
             $approvalRequired = Setting::bool('correction_approval_required', true);
 
             if (! $approvalRequired) {
@@ -617,9 +660,17 @@ class AttendanceService
                 ->lockForUpdate()
                 ->findOrFail($correction->getKey());
 
+            if (! $correction->isPending()) {
+                throw new \DomainException('Only pending attendance corrections can be reviewed.');
+            }
+
             $record = $correction->record;
 
-            if ($correction->isPending() && $approve && $record !== null) {
+            if ($record === null || ! $record->session?->isLocked()) {
+                throw new \DomainException('The attendance record is no longer eligible for correction.');
+            }
+
+            if ($approve && $record !== null) {
                 $record->update([
                     'status' => $correction->requested_status instanceof AttendanceStatus
                         ? $correction->requested_status->value
@@ -672,14 +723,18 @@ class AttendanceService
             ];
         });
     }
-    private function resolveStudent(array $row): ?Student
+    private function resolveStudent(array $row, ClassRoom $class): ?Student
     {
+        $query = Student::query()
+            ->where('class_room_id', $class->getKey())
+            ->where('academic_year_id', $class->academic_year_id);
+
         if (! empty($row['student_id'])) {
-            return Student::find($row['student_id']);
+            return $query->whereKey($row['student_id'])->first();
         }
 
         if (! empty($row['student_number'])) {
-            return Student::where('student_number', $row['student_number'])->first();
+            return $query->where('student_number', $row['student_number'])->first();
         }
 
         return null;
