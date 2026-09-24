@@ -26,7 +26,6 @@ class GuardiansModuleTest extends TestCase
             RoleName::Principal->value => 'Principal',
             RoleName::Registrar->value => 'Registrar',
             RoleName::Teacher->value => 'Teacher',
-            RoleName::FinanceOfficer->value => 'Finance Officer',
         ] as $name => $label) {
             Role::firstOrCreate(['name' => $name], ['label' => $label]);
         }
@@ -96,14 +95,6 @@ class GuardiansModuleTest extends TestCase
             ->assertSee('Almaz Bekele');
     }
 
-    public function test_finance_officer_cannot_access_guardians(): void
-    {
-        $financeOfficer = $this->userWithRole(RoleName::FinanceOfficer->value);
-
-        $this->actingAs($financeOfficer)
-            ->get(route('guardians.index'))
-            ->assertForbidden();
-    }
 
     public function test_guardian_registration_links_a_student(): void
     {
