@@ -14,7 +14,7 @@ use App\Domains\Notifications\Services\NotificationService;
 use App\Domains\ParentPortal\Models\AbsenceRequest;
 use App\Domains\ParentPortal\Models\MeetingRequest;
 use App\Domains\ParentPortal\Models\ParentRequest;
-use App\Domains\Students\Models\Guardian;
+use App\Domains\Students\Models\ParentProfile;
 use App\Domains\Students\Models\Student;
 use App\Domains\Students\Models\StudentDocument;
 use App\Domains\TeacherPortal\Models\AssessmentResult;
@@ -40,7 +40,7 @@ use Illuminate\View\View;
 
 class ParentPortalController extends Controller
 {
-    private function currentGuardian(): ?Guardian
+    private function currentParent(): ?ParentProfile
     {
         $user = auth()->user();
 
@@ -48,12 +48,12 @@ class ParentPortalController extends Controller
             return null;
         }
 
-        return $user?->guardian;
+        return $user?->parent;
     }
 
     private function wards(): Collection
     {
-        $guardian = $this->currentGuardian();
+        $guardian = $this->currentParent();
 
         return $guardian?->students()
             ->with(['gradeLevel', 'classRoom.gradeLevel'])
