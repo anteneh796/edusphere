@@ -8,6 +8,7 @@ use App\Domains\Exams\Models\ExamSubject;
 use App\Domains\Exams\Models\ReportCard;
 use App\Domains\Exams\Models\ReportCardItem;
 use App\Domains\Students\Models\Student;
+use App\Support\Enums\ExamStatus;
 use App\Support\Enums\ReportCardStatus;
 use Illuminate\Support\Facades\DB;
 
@@ -19,11 +20,27 @@ class ReportCardsService extends ExamsService
      * Snapshot columns (total_max, total_obtained, average_percent, class_rank,
      * class_size) map 1:1 onto the report_cards migration columns.
      */
-    public function generateForStudent(Exam $exam, string $studentId): ReportCard
+    public function generateForStudent(Exam $exam, string $studentId, ?string $generatedById = null): ReportCard
     {
-        return DB::transaction(function () use ($exam, $studentId) {
+        return DB::transaction(function () use ($exam, $studentId, $generatedById) {
             $exam = Exam::query()->lockForUpdate()->findOrFail($exam->getKey());
             $student = Student::findOrFail($studentId);
+
+            if (! in_array($exam->status, [ExamStatus::Published, ExamStatus::Completed], true)) {
+                throw new \RuntimeException('Report cards can only be generated for published or completed exams.');
+            }
+
+            if (! $student->class_room_id || ! $student->academic_year_id || $student->academic_year_id !== $exam->academic_year_id) {
+                throw new \RuntimeException('The student is not enrolled in the exam academic year.');
+            }
+
+            $hasPaper = $exam->papers()
+                ->where('class_room_id', $student->class_room_id)
+                ->exists();
+
+            if (! $hasPaper) {
+                throw new \RuntimeException('The student does not belong to a class included in this exam.');
+            }
 
             $card = ReportCard::query()
                 ->where('exam_id', $exam->getKey())
@@ -64,6 +81,7 @@ class ReportCardsService extends ExamsService
                     'academic_term_id' => $academicTermId,
                     'exam_id' => $exam->getKey(),
                     'student_id' => $studentId,
+                    'generated_by_id' => $generatedById,
                     'status' => ReportCardStatus::Generated->value,
                     'total_max_marks' => $totalMax,
                     'total_obtained_marks' => $totalObtained,
@@ -75,6 +93,7 @@ class ReportCardsService extends ExamsService
                 $card->update([
                     'academic_year_id' => $exam->academic_year_id,
                     'academic_term_id' => $academicTermId,
+                    'generated_by_id' => $generatedById ?? $card->generated_by_id,
                     'status' => ReportCardStatus::Generated->value,
                     'total_max_marks' => $totalMax,
                     'total_obtained_marks' => $totalObtained,
