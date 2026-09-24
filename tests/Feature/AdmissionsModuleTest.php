@@ -5,7 +5,6 @@ use App\Domains\Academics\Models\GradeLevel;
 use App\Domains\Accounts\Models\Role;
 use App\Domains\Accounts\Models\User;
 use App\Domains\Admissions\Models\AdmissionApplication;
-use App\Domains\Admissions\Models\ApplicationGuardian;
 use App\Domains\Admissions\Models\GradeCapacity;
 use App\Domains\Cms\Models\Inquiry;
 use App\Support\Enums\AdmissionStatus;
