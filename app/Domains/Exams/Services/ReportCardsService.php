@@ -2,6 +2,7 @@
 
 namespace App\Domains\Exams\Services;
 
+use App\Domains\Academics\Models\AcademicTerm;
 use App\Domains\Exams\Models\Exam;
 use App\Domains\Exams\Models\ExamSubject;
 use App\Domains\Exams\Models\ReportCard;
@@ -47,11 +48,20 @@ class ReportCardsService extends ExamsService
             $totalMax = $papers->sum(fn (ExamSubject $paper) => (float) $paper->max_marks);
             $totalObtained = $papers->sum(fn (ExamSubject $paper) => (float) ($paper->results->first()?->marks_obtained ?? 0));
             $rank = $this->classRank($exam, $student);
+            $academicTermId = AcademicTerm::query()
+                ->where('academic_year_id', $exam->academic_year_id)
+                ->orderByDesc('is_current')
+                ->orderBy('sequence')
+                ->value('id');
+
+            if (! $academicTermId) {
+                throw new \RuntimeException('The exam academic year has no academic term.');
+            }
 
             if (! $card) {
                 $card = ReportCard::create([
                     'academic_year_id' => $exam->academic_year_id,
-                    'academic_term_id' => null,
+                    'academic_term_id' => $academicTermId,
                     'exam_id' => $exam->getKey(),
                     'student_id' => $studentId,
                     'status' => ReportCardStatus::Generated->value,
@@ -64,7 +74,7 @@ class ReportCardsService extends ExamsService
             } else {
                 $card->update([
                     'academic_year_id' => $exam->academic_year_id,
-                    'academic_term_id' => $exam->academic_term_id,
+                    'academic_term_id' => $academicTermId,
                     'status' => ReportCardStatus::Generated->value,
                     'total_max_marks' => $totalMax,
                     'total_obtained_marks' => $totalObtained,
