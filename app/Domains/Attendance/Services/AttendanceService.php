@@ -192,7 +192,7 @@ class AttendanceService
                 continue;
             }
 
-            $resolved = $rows->map(function (array $row) {
+            $resolved = $rows->map(function (array $row) use ($class) {
                 $student = $this->resolveStudent($row, $class);
 
                 return [
