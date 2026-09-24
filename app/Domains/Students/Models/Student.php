@@ -106,7 +106,7 @@ class Student extends Model
         return $this->belongsTo(AcademicYear::class);
     }
 
-    public function guardians(): BelongsToMany
+    public function parents(): BelongsToMany
     {
         return $this->belongsToMany(Guardian::class)
             ->using(GuardianStudentPivot::class)
@@ -114,9 +114,21 @@ class Student extends Model
             ->withPivot('is_primary', 'permissions');
     }
 
-    public function primaryGuardian(): BelongsTo
+    public function primaryParent(): BelongsTo
     {
         return $this->belongsTo(Guardian::class, 'guardian_id');
+    }
+
+    /** @deprecated Internal compatibility alias; UI uses parents(). */
+    public function guardians(): BelongsToMany
+    {
+        return $this->parents();
+    }
+
+    /** @deprecated Internal compatibility alias; UI uses primaryParent(). */
+    public function primaryGuardian(): BelongsTo
+    {
+        return $this->primaryParent();
     }
 
     public function enrollments(): HasMany
