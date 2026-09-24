@@ -91,7 +91,7 @@ class Navigation
                 'items' => [
                     ['label' => __('Staff'), 'route' => 'staff.index', 'icon' => 'users', 'enabled' => true, 'permissions' => ['staff.view']],
                     ['label' => __('Approvals'), 'route' => 'approvals.index', 'icon' => 'check-square', 'enabled' => true, 'permissions' => ['approvals.view']],
-                    ['label' => __('Parent Services'), 'route' => 'guardian-services.requests.index', 'icon' => 'inbox', 'enabled' => true, 'permissions' => ['parent_services.view']],
+                    ['label' => __('Parent Services'), 'route' => 'parent-services.requests.index', 'icon' => 'inbox', 'enabled' => true, 'permissions' => ['parent_services.view']],
                     ['label' => __('Users & Roles'), 'route' => 'users.index', 'icon' => 'users', 'enabled' => true, 'permissions' => ['users.view']],
                     ['label' => __('Role Permissions'), 'route' => 'roles.index', 'icon' => 'shield', 'enabled' => true, 'permissions' => ['users.view']],
                     ['label' => __('Active Sessions'), 'route' => 'security.sessions', 'icon' => 'devices', 'enabled' => true, 'permissions' => ['audit.view']],
