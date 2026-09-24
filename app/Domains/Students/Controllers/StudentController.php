@@ -258,7 +258,7 @@ class StudentController extends Controller
 
         $contact->update($request->validated());
 
-        return redirect()->route('students.show', url(route('students.show', $student).'#emergency'))
+        return redirect()->to(route('students.show', $student).'#emergency')
             ->with('status', 'Emergency contact updated.');
     }
 
@@ -269,7 +269,7 @@ class StudentController extends Controller
 
         $contact->delete();
 
-        return redirect()->route('students.show', url(route('students.show', $student).'#emergency'))
+        return redirect()->to(route('students.show', $student).'#emergency')
             ->with('status', 'Emergency contact removed.');
     }
 
@@ -309,13 +309,14 @@ class StudentController extends Controller
 
         $this->studentService->addDocument($student, $document, auth()->id());
 
-        return redirect()->route('students.show', url(route('students.show', $student).'#documents'))
+        return redirect()->to(route('students.show', $student).'#documents')
             ->with('status', 'Document "'.$document->name.'" uploaded.');
     }
 
     public function documentVerify(Student $student, StudentDocument $document): RedirectResponse
     {
         $this->authorize('viewDocuments', $student);
+        abort_unless((int) $document->student_id === (int) $student->getKey(), 404);
 
         $document->update([
             'verified' => ! $document->verified,
@@ -330,18 +331,19 @@ class StudentController extends Controller
             ['document_id' => $document->getKey()]
         );
 
-        return redirect()->route('students.show', url(route('students.show', $student).'#documents'))
+        return redirect()->to(route('students.show', $student).'#documents')
             ->with('status', $document->verified ? 'Document verified.' : 'Verification revoked.');
     }
 
     public function documentDestroy(Student $student, StudentDocument $document): RedirectResponse
     {
         $this->authorize('viewDocuments', $student);
+        abort_unless((int) $document->student_id === (int) $student->getKey(), 404);
 
         Storage::disk('public')->delete($document->path);
         $document->delete();
 
-        return redirect()->route('students.show', url(route('students.show', $student).'#documents'))
+        return redirect()->to(route('students.show', $student).'#documents')
             ->with('status', 'Document removed.');
     }
 
