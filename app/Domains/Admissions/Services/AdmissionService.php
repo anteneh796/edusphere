@@ -158,7 +158,7 @@ class AdmissionService
                 $guardianFirst = $guardianParts[0] ?? 'Guardian';
                 $guardianLast = count($guardianParts) > 1 ? implode(' ', array_slice($guardianParts, 1)) : $guardianFirst;
 
-                $application->guardians()->create([
+                $application->parents()->create([
                     'first_name' => $guardianFirst,
                     'last_name' => $guardianLast,
                     'relationship' => 'father',
@@ -639,7 +639,7 @@ class AdmissionService
                 'address' => $guardian->address,
             ]);
 
-            $student->guardians()->attach($record->getKey(), ['is_primary' => $guardian->is_primary || $index === 0]);
+            $student->parents()->attach($record->getKey(), ['is_primary' => $guardian->is_primary || $index === 0]);
 
             if ($index === 0) {
                 $student->update(['guardian_id' => $record->getKey()]);
@@ -758,18 +758,18 @@ class AdmissionService
         foreach ($parents as $entry) {
             $id = $entry['id'] ?? null;
 
-            if ($id && $application->guardians()->whereKey($id)->exists()) {
-                $application->guardians()->whereKey($id)->update($this->parentFields($entry));
+            if ($id && $application->parents()->whereKey($id)->exists()) {
+                $application->parents()->whereKey($id)->update($this->parentFields($entry));
                 $keep[] = $id;
 
                 continue;
             }
 
             unset($entry['id']);
-            $keep[] = $application->guardians()->create($this->parentFields($entry))->getKey();
+            $keep[] = $application->parents()->create($this->parentFields($entry))->getKey();
         }
 
-        $application->guardians()->whereNotIn('id', $keep)->delete();
+        $application->parents()->whereNotIn('id', $keep)->delete();
     }
 
     private function parentFields(array $entry): array
