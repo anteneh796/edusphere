@@ -34,7 +34,17 @@ class ExamPolicy
 
     public function enterResults(?User $user, Exam $exam): bool
     {
-        return $this->viewAny($user);
+        if (! $user) {
+            return false;
+        }
+
+        // Teachers may enter results only through the teacher/class assignment
+        // for the paper. Administrative users need the normal exam edit access.
+        if ($user->hasRole('teacher')) {
+            return true;
+        }
+
+        return $user->hasPermission('exams.edit');
     }
 
     public function delete(?User $user, Exam $exam): bool
