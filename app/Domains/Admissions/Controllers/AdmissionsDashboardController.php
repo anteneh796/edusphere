@@ -2,19 +2,22 @@
 
 namespace App\Domains\Admissions\Controllers;
 
-use App\Domains\Academics\Models\AcademicYear;
 use App\Domains\Admissions\Models\AdmissionApplication;
 use App\Domains\Admissions\Services\AdmissionsDashboardService;
+use App\Domains\Admissions\Services\AdmissionService;
+use Illuminate\Validation\ValidationException;
 use App\Domains\Cms\Models\Inquiry;
 use App\Http\Controllers\Controller;
-use App\Support\Enums\AdmissionStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class AdmissionsDashboardController extends Controller
 {
-    public function __construct(private readonly AdmissionsDashboardService $service) {}
+    public function __construct(
+        private readonly AdmissionsDashboardService $service,
+        private readonly AdmissionService $admissions,
+    ) {}
 
     public function index(): View
     {
@@ -32,27 +35,24 @@ class AdmissionsDashboardController extends Controller
 
     public function handleInquiry(Request $request, Inquiry $inquiry): RedirectResponse
     {
-        $this->authorize('viewAny', AdmissionApplication::class);
+        $this->authorize('create', AdmissionApplication::class);
 
-        $intakeYearId = $request->input('intake_academic_year_id')
-            ?? AcademicYear::query()->where('is_current', true)->value('id');
-
-        $application = AdmissionApplication::factory()->create([
-            'source_inquiry_id' => $inquiry->getKey(),
-            'grade_level_id' => $request->input('grade_level_id'),
-            'intake_academic_year_id' => $intakeYearId,
-            'status' => AdmissionStatus::Draft->value,
-            'applied_at' => null,
-            'created_by' => $inquiry->handled_by ?? auth()->id(),
+        $data = $request->validate([
+            'grade_level_id' => ['required', 'exists:grade_levels,id'],
+            'intake_academic_year_id' => ['required', 'exists:academic_years,id'],
         ]);
 
-        $inquiry->update([
-            'status' => $inquiry->status === 'new' ? 'handled' : $inquiry->status,
-            'handled_at' => $inquiry->handled_at ?? now(),
-            'handled_by' => $inquiry->handled_by ?? auth()->id(),
-        ]);
+        try {
+            $application = $this->admissions->createDraftFromInquiry(
+                $inquiry,
+                (string) $data['grade_level_id'],
+                (string) $data['intake_academic_year_id'],
+            );
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
 
-        return redirect()->route('admissions.applications.create', $application)
-            ->with('status', 'Inquiry handled into an application draft.');
+        return redirect()->route('admissions.applications.show', $application)
+            ->with('status', 'Inquiry converted into an admission application draft.');
     }
 }
