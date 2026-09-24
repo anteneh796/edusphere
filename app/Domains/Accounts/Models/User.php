@@ -191,13 +191,7 @@ class User extends Authenticatable
         return $this->hasOne(Guardian::class, 'user_id');
     }
 
-    /** @deprecated Use parent() for the unified family portal. */
-    public function guardian(): HasOne
-    {
-        return $this->parent();
-    }
-
-    public function userNotifications()
+        public function userNotifications()
     {
         return $this->hasMany(Notification::class, 'user_id');
     }
