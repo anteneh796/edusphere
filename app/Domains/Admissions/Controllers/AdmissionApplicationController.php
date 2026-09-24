@@ -279,8 +279,7 @@ class AdmissionApplicationController extends Controller
         ActivityLogger::log('enrolled '.$student->full_name.' ('.$student->student_number.') via admissions', 'admissions', $student->id);
 
         return redirect()->route('admissions.applications.show', $application)
-            ->with('status', $student->full_name.' enrolled as '.$student->student_number.'.')
-            ;
+            ->with('status', $student->full_name.' enrolled as '.$student->student_number.'.');
     }
 
     private function transition(string $method, AdmissionApplication $application, string $success, ?string $parameter = null): RedirectResponse
