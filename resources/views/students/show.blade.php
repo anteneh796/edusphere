@@ -91,9 +91,9 @@
                     </div>
                 </div>
                 <div class="stat-cell">
-                    <div class="text-xs text-muted">{{ __('Guardian') }}</div>
+                    <div class="text-xs text-muted">{{ __('Parent') }}</div>
                     <div class="stat-value" style="font-size:var(--text-md);">
-                        {{ $student->primaryGuardian?->full_name ?? '—' }}
+                        {{ $student->primaryParent?->full_name ?? '—' }}
                     </div>
                     <div class="text-xs text-muted">{{ $student->primaryGuardian?->phone ?? $student->primaryGuardian?->email ?? __('No contact') }}</div>
                 </div>
@@ -130,9 +130,9 @@
                 </div>
             </x-card>
 
-            <x-card title="Guardians">
-                @forelse ($student->guardians as $guardian)
-                    <a href="{{ route('guardians.show', $guardian) }}" class="guardian-row" style="text-decoration:none;">
+            <x-card title="Parents">
+                @forelse ($student->parents as $guardian)
+                    <a href="{{ '#' }}" class="parent-row" style="text-decoration:none;">
                         <x-avatar :initials="strtoupper(substr($guardian->first_name, 0, 1).substr($guardian->last_name, 0, 1))" size="sm" />
                         <div style="min-width:0;">
                             <div class="flex gap-1" style="align-items:center;">
@@ -145,7 +145,7 @@
                         </div>
                     </a>
                 @empty
-                    <p class="text-muted text-sm">No guardian linked yet.</p>
+                    <p class="text-muted text-sm">No parent linked yet.</p>
                 @endforelse
             </x-card>
 
@@ -242,7 +242,7 @@
             <div x-data="{ open: false }">
                 <div class="flex flex-col" style="gap: var(--space-2);">
                     @forelse ($student->emergencyContacts as $contact)
-                        <div class="guardian-row">
+                        <div class="parent-row">
                             <x-avatar :initials="strtoupper(substr($contact->name, 0, 2))" size="sm" />
                             <div style="min-width:0; flex:1;">
                                 <div class="flex gap-1" style="align-items:center;">
