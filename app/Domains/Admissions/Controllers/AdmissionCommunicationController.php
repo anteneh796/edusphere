@@ -30,6 +30,10 @@ class AdmissionCommunicationController extends Controller
     {
         $this->authorize('update', $application);
 
+        if ($communication->application_id !== $application->getKey()) {
+            abort(404);
+        }
+
         $communication->delete();
 
         return back()->with('status', 'Communication removed.');
