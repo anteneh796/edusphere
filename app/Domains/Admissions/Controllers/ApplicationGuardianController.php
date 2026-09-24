@@ -3,15 +3,15 @@
 namespace App\Domains\Admissions\Controllers;
 
 use App\Domains\Admissions\Models\AdmissionApplication;
-use App\Domains\Admissions\Models\ApplicationParent;
-use App\Domains\Admissions\Requests\StoreApplicationParentRequest;
+use App\Domains\Admissions\Models\ApplicationGuardian;
+use App\Domains\Admissions\Requests\StoreApplicationGuardianRequest;
 use App\Http\Controllers\Controller;
 use App\Support\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 
 class ApplicationGuardianController extends Controller
 {
-    public function store(StoreApplicationParentRequest $request, AdmissionApplication $application): RedirectResponse
+    public function store(StoreApplicationGuardianRequest $request, AdmissionApplication $application): RedirectResponse
     {
         $this->authorize('update', $application);
 
@@ -21,7 +21,7 @@ class ApplicationGuardianController extends Controller
         return back()->with('status', 'Parent added.');
     }
 
-    public function update(StoreApplicationParentRequest $request, AdmissionApplication $application, ApplicationParent $parent): RedirectResponse
+    public function update(StoreApplicationGuardianRequest $request, AdmissionApplication $application, ApplicationGuardian $parent): RedirectResponse
     {
         $this->authorize('update', $application);
 
@@ -35,7 +35,7 @@ class ApplicationGuardianController extends Controller
         return back()->with('status', 'Parent updated.');
     }
 
-    public function destroy(AdmissionApplication $application, ApplicationParent $parent): RedirectResponse
+    public function destroy(AdmissionApplication $application, ApplicationGuardian $parent): RedirectResponse
     {
         $this->authorize('update', $application);
 
