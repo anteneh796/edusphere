@@ -457,7 +457,7 @@ Route::middleware(['auth', 'active', 'force.password'])->group(function () {
 
         Route::middleware(['permission:admissions.create'])->group(function () {
             Route::post('admissions/applications/{application}/parents', [ApplicationGuardianController::class, 'store'])->name('parents.store');
-            Route::put('admissions/applications/{application}/guardians/{guardian}', [ApplicationGuardianController::class, 'update'])->name('parents.update');
+            Route::put('admissions/applications/{application}/parents/{guardian}', [ApplicationGuardianController::class, 'update'])->name('parents.update');
             Route::delete('admissions/applications/{application}/guardians/{guardian}', [ApplicationGuardianController::class, 'destroy'])->name('parents.destroy');
             Route::post('admissions/applications/{application}/documents', [ApplicantDocumentController::class, 'store'])->name('documents.store');
             Route::post('admissions/applications/{application}/communications', [AdmissionCommunicationController::class, 'store'])->name('communications.store');
