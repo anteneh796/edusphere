@@ -74,8 +74,8 @@ class StudentController extends Controller
         $this->authorize('view', $student);
 
         $student->load([
-            'gradeLevel', 'classRoom', 'academicYear', 'primaryGuardian',
-            'guardians', 'enrollments.academicYear', 'enrollments.gradeLevel', 'enrollments.classRoom',
+            'gradeLevel', 'classRoom', 'academicYear', 'primaryParent',
+            'parents', 'enrollments.academicYear', 'enrollments.gradeLevel', 'enrollments.classRoom',
             'medicalRecord', 'emergencyContacts', 'documents.uploadedBy', 'documents.verifiedBy',
             'transfers.fromClassRoom', 'transfers.toClassRoom', 'transfers.approvedBy',
             'statusHistories', 'timeline',
