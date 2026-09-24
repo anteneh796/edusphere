@@ -158,7 +158,7 @@ class AdmissionsModuleTest extends TestCase
 
         $this->actingAs($registrar)
             ->post(route('admissions.applications.submit', $application))
-            ->assertSuccessful();
+            ->assertRedirect();
 
         $this->actingAs($registrar)
             ->post(route('admissions.applications.decide', $application), ['decision' => 'approved'])
@@ -339,8 +339,16 @@ class AdmissionsModuleTest extends TestCase
     public function test_guardian_route_cannot_modify_a_guardian_belonging_to_another_application(): void
     {
         $registrar = $this->userWithRole(RoleName::Registrar->value);
-        $first = AdmissionApplication::factory()->create();
-        $second = AdmissionApplication::factory()->create();
+        $year = $this->currentYear();
+        $grade = $this->grade();
+        $first = AdmissionApplication::factory()->create([
+            'intake_academic_year_id' => $year->getKey(),
+            'grade_level_id' => $grade->getKey(),
+        ]);
+        $second = AdmissionApplication::factory()->create([
+            'intake_academic_year_id' => $year->getKey(),
+            'grade_level_id' => $grade->getKey(),
+        ]);
         $guardian = $second->guardians()->firstOrFail();
 
         $this->actingAs($registrar)
