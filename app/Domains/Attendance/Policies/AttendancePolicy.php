@@ -2,38 +2,67 @@
 
 namespace App\Domains\Attendance\Policies;
 
+use App\Domains\Academics\Models\ClassSubject;
 use App\Domains\Accounts\Models\User;
 use App\Domains\Attendance\Models\AttendanceSession;
+use App\Support\Enums\RoleName;
 
 class AttendancePolicy
 {
     public function viewAny(?User $user): bool
     {
-        return (bool) $user?->hasPermission('attendance.view');
+        return (bool) $user?->hasPermission('attendance.view')
+            && ! $user->hasRole(RoleName::Teacher->value);
     }
 
     public function view(?User $user, AttendanceSession $session): bool
     {
-        return $this->viewAny($user);
+        if (! $user?->hasPermission('attendance.view')) {
+            return false;
+        }
+
+        if (! $user->hasRole(RoleName::Teacher->value)) {
+            return true;
+        }
+
+        return $this->teacherOwnsClass($user, $session);
     }
 
     public function create(?User $user): bool
     {
-        return (bool) $user?->hasPermission('attendance.create');
+        return (bool) $user?->hasPermission('attendance.create')
+            && ! $user->hasRole(RoleName::Teacher->value);
     }
 
     public function update(?User $user, AttendanceSession $session): bool
     {
-        return (bool) $user?->hasPermission('attendance.edit');
+        if (! $user?->hasPermission('attendance.edit')) {
+            return false;
+        }
+
+        if (! $user->hasRole(RoleName::Teacher->value)) {
+            return true;
+        }
+
+        return $this->teacherOwnsClass($user, $session);
     }
 
     public function delete(?User $user, AttendanceSession $session): bool
     {
-        return (bool) $user?->hasPermission('attendance.delete');
+        return (bool) $user?->hasPermission('attendance.delete')
+            && ! $user->hasRole(RoleName::Teacher->value);
     }
 
     public function close(?User $user, AttendanceSession $session): bool
     {
         return $this->update($user, $session);
+    }
+
+    private function teacherOwnsClass(User $user, AttendanceSession $session): bool
+    {
+        return ClassSubject::query()
+            ->where('teacher_id', $user->getKey())
+            ->where('class_room_id', $session->class_room_id)
+            ->exists();
     }
 }
