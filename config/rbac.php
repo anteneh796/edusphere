@@ -7,8 +7,8 @@
  * Every permanent role carries exactly these permissions; administrators can
  * refine individual roles from the Roles & Permissions screen.
  *
- * NOTE: EduSphere is currently a single-school deployment. Multi-school
- * isolation is documented in Architecture but not enforced by schema yet.
+ * EduSphere is intentionally a single-school deployment. Do not reintroduce
+ * tenant or multi-school assumptions without an explicit scope decision.
  */
 
 return [
