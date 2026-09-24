@@ -3,7 +3,7 @@
 namespace App\Domains\Students\Models;
 
 use App\Domains\Accounts\Models\User;
-use App\Support\Enums\GuardianRelationship;
+use App\Support\Enums\ParentRelationship;
 use App\Support\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -44,7 +44,7 @@ class Guardian extends Model
 
     public function relationshipLabel(): string
     {
-        return GuardianRelationship::tryFrom($this->relationship)?->label() ?? ucfirst($this->relationship ?? '');
+        return ParentRelationship::tryFrom($this->relationship)?->label() ?? ucfirst($this->relationship ?? '');
     }
 
     public function students(): BelongsToMany
