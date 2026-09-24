@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Domains\Academics\Models\AcademicYear;
 use App\Domains\Academics\Models\ClassRoom;
+use App\Domains\Academics\Models\ClassSubject;
 use App\Domains\Academics\Models\GradeLevel;
 use App\Domains\Academics\Models\Subject;
 use App\Domains\Accounts\Models\Role;
@@ -61,6 +62,16 @@ class ExamsModuleTest extends TestCase
     {
         $user = User::factory()->create();
         $user->roles()->attach(Role::where('name', $roleName)->first());
+
+        if ($roleName === RoleName::Teacher->value) {
+            ClassSubject::create([
+                'class_room_id' => $this->classId,
+                'subject_id' => $this->subjectId,
+                'teacher_id' => $user->getKey(),
+                'periods_per_week' => 5,
+                'position' => 1,
+            ]);
+        }
 
         return $user;
     }
