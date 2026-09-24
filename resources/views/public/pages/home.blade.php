@@ -49,7 +49,7 @@
                 <div class="hero-card hero-card-main">
                     <span class="hero-card-icon"><x-icon name="graduation" /></span>
                     <p>{{ __('A complete curriculum') }}</p>
-                    <small>{{ __('Preschool through Grade 8') }}</small>
+                    <small>{{ __('KG through Grade 8') }}</small>
                 </div>
                 <div class="hero-card hero-card-accent">
                     <span class="hero-card-icon"><x-icon name="award" /></span>
