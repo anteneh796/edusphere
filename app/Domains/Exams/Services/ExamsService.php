@@ -3,6 +3,8 @@
 namespace App\Domains\Exams\Services;
 
 use App\Domains\Academics\Models\AcademicYear;
+use App\Domains\Academics\Models\ClassSubject;
+use App\Domains\Accounts\Models\User;
 use App\Domains\Exams\Models\Exam;
 use App\Domains\Exams\Models\ExamResult;
 use App\Domains\Exams\Models\ExamSubject;
@@ -54,6 +56,40 @@ class ExamsService
      */
     public function saveResults(ExamSubject $paper, string $enteredById, array $rows): int
     {
+        $paper->loadMissing('exam', 'subject', 'classRoom');
+
+        if (! $paper->exam->isPublished()) {
+            throw new \RuntimeException('Results can only be entered after the exam is published.');
+        }
+
+        $user = User::findOrFail($enteredById);
+
+        if ($user->hasRole('teacher') && ! ClassSubject::query()
+            ->where('class_room_id', $paper->class_room_id)
+            ->where('subject_id', $paper->subject_id)
+            ->where('teacher_id', $user->getKey())
+            ->exists()) {
+            throw new \RuntimeException('You are not assigned to this class and subject.');
+        }
+
+        $studentIds = collect($rows)
+            ->pluck('student_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($studentIds->isNotEmpty()) {
+            $validStudentIds = \App\Domains\Students\Models\Student::query()
+                ->whereIn('id', $studentIds)
+                ->where('class_room_id', $paper->class_room_id)
+                ->where('academic_year_id', $paper->exam->academic_year_id)
+                ->pluck('id');
+
+            if ($validStudentIds->count() !== $studentIds->count()) {
+                throw new \RuntimeException('Every result student must belong to the paper class and exam academic year.');
+            }
+        }
+
         $saved = 0;
 
         foreach ($rows as $row) {
