@@ -37,6 +37,11 @@ class DashboardController extends Controller
         if ($role === RoleName::Parent->value) {
             return redirect()->route('cms.parent.dashboard');
         }
+
+        if ($role === RoleName::Teacher->value) {
+            return redirect()->route('cms.teacher.dashboard');
+        }
+
         $isSuperAdmin = $role === RoleName::SuperAdmin->value;
         $isSchoolAdmin = in_array($role, [
             RoleName::SuperAdmin->value,
