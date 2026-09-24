@@ -518,7 +518,7 @@ class ParentPortalController extends Controller
         ]);
     }
 
-    private function authorizedRecipients(Guardian $guardian): Collection
+    private function authorizedRecipients(\App\Domains\Students\Models\Guardian $guardian): Collection
     {
         $classRoomIds = $guardian->students()->pluck('class_room_id')->filter()->unique()->values();
 
