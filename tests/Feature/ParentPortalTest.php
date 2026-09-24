@@ -282,11 +282,11 @@ class ParentPortalTest extends TestCase
         $registrar->roles()->attach(Role::where('name', RoleName::Registrar->value)->firstOrFail());
 
         $this->actingAs($registrar)
-            ->post(route('guardian-services.absences.review', $absence), [
+            ->post(route('parent-services.absences.review', $absence), [
                 'status' => AbsenceRequestStatus::Approved->value,
                 'reviewer_note' => 'Noted',
             ])
-            ->assertRedirect(route('guardian-services.absences.index'));
+            ->assertRedirect(route('parent-services.absences.index'));
 
         $this->assertDatabaseHas('absence_requests', [
             'id' => $absence->getKey(),
@@ -320,11 +320,11 @@ class ParentPortalTest extends TestCase
         $registrar->roles()->attach(Role::where('name', RoleName::Registrar->value)->firstOrFail());
 
         $this->actingAs($registrar)
-            ->get(route('guardian-services.absences.index'))
+            ->get(route('parent-services.absences.index'))
             ->assertOk();
 
         $this->actingAs($registrar)
-            ->get(route('guardian-services.requests.index'))
+            ->get(route('parent-services.requests.index'))
             ->assertOk();
     }
 
@@ -412,12 +412,12 @@ class ParentPortalTest extends TestCase
         $registrar->roles()->attach(Role::where('name', RoleName::Registrar->value)->firstOrFail());
 
         $this->actingAs($registrar)
-            ->post(route('guardian-services.requests.process', $request), [
+            ->post(route('parent-services.requests.process', $request), [
                 'status' => ParentRequestStatus::Completed->value,
                 'resolution' => 'Issued certificate.',
                 'staff_note' => 'Done',
             ])
-            ->assertRedirect(route('guardian-services.requests.index'));
+            ->assertRedirect(route('parent-services.requests.index'));
 
         $this->assertDatabaseHas('parent_requests', [
             'id' => $request->getKey(),
