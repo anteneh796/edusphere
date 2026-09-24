@@ -20,7 +20,9 @@ class ReportCard extends Model
     protected static function booted(): void
     {
         static::updating(function (self $card): void {
-            if ($card->isLocked()) {
+            // Allow the publish transition itself to set locked_at. Once the
+            // record was already locked before this update, it is immutable.
+            if ($card->getOriginal('locked_at') !== null) {
                 throw new \RuntimeException('Published report cards are immutable.');
             }
         });
