@@ -85,6 +85,10 @@ class StudentService
                 ->lockForUpdate()
                 ->findOrFail($data['class_room_id']);
 
+            if ((int) $class->academic_year_id !== (int) $this->currentYear()->getKey()) {
+                throw new \InvalidArgumentException('Students can only be enrolled in the active academic year.');
+            }
+
             $year = $this->currentYear();
             $roll = $this->nextRollNumber($class, $year);
             $guardianData = $data['guardian'] ?? null;
@@ -181,6 +185,9 @@ class StudentService
             $currentEnrollment = $student->activeEnrollment();
 
             DB::transaction(function () use ($student, $currentEnrollment, $targetClass, $targetYear, $note, $userId) {
+                $targetClass = ClassRoom::with('gradeLevel')
+                    ->lockForUpdate()
+                    ->findOrFail($targetClass->getKey());
                 $roll = $this->nextRollNumber($targetClass, $targetYear);
 
                 if ($currentEnrollment) {
@@ -209,7 +216,8 @@ class StudentService
                     'status' => StudentStatus::Active->value,
                 ]);
 
-                $this->recordStatusChange($student, StudentStatus::Active, StudentStatus::Active, $note ?: 'Annual promotion', $userId);
+                $fromStatus = StudentStatus::tryFrom($student->getOriginal('status') ?? $student->status) ?? StudentStatus::Active;
+                $this->recordStatusChange($student, $fromStatus, StudentStatus::Active, $note ?: 'Annual promotion', $userId);
                 $this->logTimeline(
                     $student,
                     StudentTimelineType::Promoted,
@@ -292,6 +300,16 @@ class StudentService
             $current = $student->activeEnrollment();
             $fromClass = $current?->classRoom;
             $year = $toClass->academicYear;
+
+            if (! $current || (int) $toClass->academic_year_id !== (int) $student->academic_year_id) {
+                throw new \InvalidArgumentException('Internal transfers must stay within the student’s active academic year.');
+            }
+
+            if ((int) $toClass->grade_level_id !== (int) $student->grade_level_id) {
+                throw new \InvalidArgumentException('Internal transfers can only change sections within the same grade.');
+            }
+
+            $toClass = ClassRoom::with('gradeLevel')->lockForUpdate()->findOrFail($toClass->getKey());
 
             $roll = $this->nextRollNumber($toClass, $year);
 
