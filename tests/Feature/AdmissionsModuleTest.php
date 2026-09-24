@@ -162,7 +162,7 @@ class AdmissionsModuleTest extends TestCase
 
         $this->actingAs($registrar)
             ->post(route('admissions.applications.decide', $application), ['decision' => 'approved'])
-            ->assertSuccessful();
+            ->assertRedirect();
 
         $this->actingAs($registrar)
             ->post(route('admissions.applications.enroll', $application))
