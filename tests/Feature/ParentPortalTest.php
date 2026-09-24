@@ -482,4 +482,48 @@ class ParentPortalTest extends TestCase
             'body' => 'Happy to help.',
         ]);
     }
+
+    public function test_only_parent_role_can_open_parent_portal(): void
+    {
+        $teacher = User::factory()->create(['status' => 'active']);
+        $teacher->roles()->attach(Role::where('name', RoleName::Teacher->value)->firstOrFail());
+
+        $this->actingAs($teacher)
+            ->get(route('cms.parent.dashboard'))
+            ->assertForbidden();
+    }
+
+    public function test_parent_cannot_view_another_parents_ward(): void
+    {
+        $scenario = $this->guardianScenario();
+
+        $otherParent = User::factory()->create(['status' => 'active']);
+        $otherParent->roles()->attach(Role::where('name', RoleName::Parent->value)->firstOrFail());
+        $otherProfile = App\Domains\Students\Models\Guardian::factory()->create(['user_id' => $otherParent->getKey()]);
+        $otherStudent = Student::factory()->create([
+            'class_room_id' => $scenario['student']->class_room_id,
+            'academic_year_id' => $scenario['student']->academic_year_id,
+        ]);
+        $otherProfile->students()->attach($otherStudent, ['is_primary' => true]);
+
+        $this->actingAs($scenario['parent'])
+            ->get(route('cms.parent.wards.show', $otherStudent))
+            ->assertForbidden();
+    }
+
+    public function test_standalone_guardian_management_is_removed(): void
+    {
+        $principal = User::factory()->create(['status' => 'active']);
+        $principal->roles()->attach(Role::where('name', RoleName::Principal->value)->firstOrFail());
+
+        $this->actingAs($principal)
+            ->get('/guardians')
+            ->assertNotFound();
+
+        $this->assertDatabaseMissing('permissions', ['name' => 'guardians.view']);
+        $this->assertDatabaseMissing('permissions', ['name' => 'guardians.create']);
+        $this->assertDatabaseMissing('permissions', ['name' => 'guardians.edit']);
+        $this->assertDatabaseMissing('permissions', ['name' => 'guardians.delete']);
+    }
+
 }
