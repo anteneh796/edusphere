@@ -53,7 +53,18 @@ class ReportCardsController extends Controller
         ]);
 
         $exam = Exam::findOrFail($data['exam_id']);
-        $card = $this->cardsService->generateForStudent($exam, $data['student_id']);
+        try {
+            $card = $this->cardsService->generateForStudent(
+                $exam,
+                $data['student_id'],
+                (string) auth()->id()
+            );
+        } catch (\RuntimeException $e) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors(['status' => $e->getMessage()]);
+        }
 
         return redirect()
             ->route('report-cards.show', $card)
