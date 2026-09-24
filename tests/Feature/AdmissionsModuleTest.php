@@ -359,7 +359,7 @@ class AdmissionsModuleTest extends TestCase
             ])
             ->assertNotFound();
 
-        $this->assertSame('father', $guardian->fresh()->relationship);
+        $this->assertSame('guardian', $guardian->fresh()->relationship);
     }
 
 }
