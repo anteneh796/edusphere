@@ -51,7 +51,7 @@ class ReportCardsService extends ExamsService
             if (! $card) {
                 $card = ReportCard::create([
                     'academic_year_id' => $exam->academic_year_id,
-                    'academic_term_id' => $exam->academic_term_id,
+                    'academic_term_id' => null,
                     'exam_id' => $exam->getKey(),
                     'student_id' => $studentId,
                     'status' => ReportCardStatus::Generated->value,
