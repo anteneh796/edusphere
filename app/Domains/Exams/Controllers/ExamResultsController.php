@@ -59,7 +59,17 @@ class ExamResultsController extends Controller
             ]);
         }
 
-        $saved = $this->examsService->saveResults($paper, (string) $request->user()->getKey(), $request->validated('results'));
+        try {
+            $saved = $this->examsService->saveResults(
+                $paper,
+                (string) $request->user()->getKey(),
+                $request->validated('results')
+            );
+        } catch (\RuntimeException $e) {
+            throw ValidationException::withMessages([
+                'results' => $e->getMessage(),
+            ]);
+        }
 
         ActivityLogger::log("entered {$saved} result(s) for {$paper->subject->name} in exam \"{$paper->exam->name}\"", 'exams', $paper->exam->id);
 
