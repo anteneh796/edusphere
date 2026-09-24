@@ -3,48 +3,48 @@
 namespace App\Domains\Admissions\Controllers;
 
 use App\Domains\Admissions\Models\AdmissionApplication;
-use App\Domains\Admissions\Models\ApplicationGuardian;
-use App\Domains\Admissions\Requests\StoreApplicationGuardianRequest;
+use App\Domains\Admissions\Models\ApplicationParent;
+use App\Domains\Admissions\Requests\StoreApplicationParentRequest;
 use App\Http\Controllers\Controller;
 use App\Support\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 
-class ApplicationGuardianController extends Controller
+class ApplicationParentController extends Controller
 {
-    public function store(StoreApplicationGuardianRequest $request, AdmissionApplication $application): RedirectResponse
+    public function store(StoreApplicationParentRequest $request, AdmissionApplication $application): RedirectResponse
     {
         $this->authorize('update', $application);
 
-        $application->guardians()->create($request->validated());
-        ActivityLogger::log('added guardian to application '.$application->application_number, 'admissions', $application->id);
+        $application->parents()->create($request->validated());
+        ActivityLogger::log('added parent to application '.$application->application_number, 'admissions', $application->id);
 
-        return back()->with('status', 'Guardian added.');
+        return back()->with('status', 'Parent added.');
     }
 
-    public function update(StoreApplicationGuardianRequest $request, AdmissionApplication $application, ApplicationGuardian $guardian): RedirectResponse
+    public function update(StoreApplicationParentRequest $request, AdmissionApplication $application, ApplicationParent $parent): RedirectResponse
     {
         $this->authorize('update', $application);
 
-        if ($guardian->application_id !== $application->getKey()) {
+        if ($parent->application_id !== $application->getKey()) {
             abort(404);
         }
 
-        $guardian->update($request->validated());
-        ActivityLogger::log('updated guardian on application '.$application->application_number, 'admissions', $application->id);
+        $parent->update($request->validated());
+        ActivityLogger::log('updated parent on application '.$application->application_number, 'admissions', $application->id);
 
-        return back()->with('status', 'Guardian updated.');
+        return back()->with('status', 'Parent updated.');
     }
 
-    public function destroy(AdmissionApplication $application, ApplicationGuardian $guardian): RedirectResponse
+    public function destroy(AdmissionApplication $application, ApplicationParent $parent): RedirectResponse
     {
         $this->authorize('update', $application);
 
-        if ($guardian->application_id !== $application->getKey()) {
+        if ($parent->application_id !== $application->getKey()) {
             abort(404);
         }
 
-        $guardian->delete();
+        $parent->delete();
 
-        return back()->with('status', 'Guardian removed.');
+        return back()->with('status', 'Parent removed.');
     }
 }
