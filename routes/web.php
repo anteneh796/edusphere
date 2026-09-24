@@ -336,23 +336,6 @@ Route::middleware(['auth', 'active', 'force.password'])->group(function () {
         });
     });
 
-    Route::middleware(['permission:guardians.view'])->name('guardians.')->group(function () {
-        Route::get('guardians', [GuardianController::class, 'index'])->name('index');
-
-        Route::middleware(['permission:guardians.create'])->group(function () {
-            Route::get('guardians/create', [GuardianController::class, 'create'])->name('create');
-            Route::post('guardians', [GuardianController::class, 'store'])->name('store');
-        });
-
-        Route::get('guardians/{guardian}', [GuardianController::class, 'show'])->name('show');
-
-        Route::middleware(['permission:guardians.edit'])->group(function () {
-            Route::get('guardians/{guardian}/edit', [GuardianController::class, 'edit'])->name('edit');
-            Route::put('guardians/{guardian}', [GuardianController::class, 'update'])->name('update');
-            Route::delete('guardians/{guardian}', [GuardianController::class, 'destroy'])->name('destroy');
-        });
-    });
-
     Route::middleware(['permission:cms.view'])->name('cms.')->group(function () {
         Route::get('website', [CmsController::class, 'index'])->name('index');
 
