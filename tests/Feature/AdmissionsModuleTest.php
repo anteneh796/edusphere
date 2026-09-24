@@ -292,8 +292,8 @@ class AdmissionsModuleTest extends TestCase
         $this->assertSame(AdmissionStatus::Draft->value, $application->status);
         $this->assertSame('Abebe', $application->first_name);
         $this->assertSame('Bekele', $application->last_name);
-        $this->assertNotNull($application->primaryGuardian);
-        $this->assertSame('parent@example.test', $application->primaryGuardian->email);
+        $this->assertNotNull($application->primaryParent);
+        $this->assertSame('parent@example.test', $application->primaryParent->email);
         $this->assertNotNull($inquiry->fresh()->handled_at);
 
         $this->actingAs($registrar)
@@ -325,10 +325,10 @@ class AdmissionsModuleTest extends TestCase
                 'last_name' => 'Applicant',
                 'intake_academic_year_id' => $year->getKey(),
                 'grade_level_id' => $grade->getKey(),
-                'guardians' => [[
+                'parents' => [[
                     'first_name' => 'Parent',
                     'last_name' => 'Applicant',
-                    'relationship' => 'guardian',
+                    'relationship' => 'father',
                 ]],
             ]);
 
@@ -336,7 +336,7 @@ class AdmissionsModuleTest extends TestCase
         $this->assertDatabaseMissing('admission_applications', ['first_name' => 'Test', 'last_name' => 'Applicant']);
     }
 
-    public function test_guardian_route_cannot_modify_a_guardian_belonging_to_another_application(): void
+    public function test_parent_route_cannot_modify_a_guardian_belonging_to_another_application(): void
     {
         $registrar = $this->userWithRole(RoleName::Registrar->value);
         $year = $this->currentYear();
@@ -352,14 +352,14 @@ class AdmissionsModuleTest extends TestCase
         $guardian = $second->guardians()->firstOrFail();
 
         $this->actingAs($registrar)
-            ->put(route('admissions.guardians.update', [$first, $guardian]), [
+            ->put(route('admissions.parents.update', [$first, $guardian]), [
                 'first_name' => 'Cross',
                 'last_name' => 'Application',
-                'relationship' => 'guardian',
+                'relationship' => 'father',
             ])
             ->assertNotFound();
 
-        $this->assertSame('guardian', $guardian->fresh()->relationship);
+        $this->assertSame('father', $guardian->fresh()->relationship);
     }
 
 }
