@@ -25,6 +25,10 @@ class ApplicationGuardianController extends Controller
     {
         $this->authorize('update', $application);
 
+        if ($guardian->application_id !== $application->getKey()) {
+            abort(404);
+        }
+
         $guardian->update($request->validated());
         ActivityLogger::log('updated guardian on application '.$application->application_number, 'admissions', $application->id);
 
@@ -34,6 +38,10 @@ class ApplicationGuardianController extends Controller
     public function destroy(AdmissionApplication $application, ApplicationGuardian $guardian): RedirectResponse
     {
         $this->authorize('update', $application);
+
+        if ($guardian->application_id !== $application->getKey()) {
+            abort(404);
+        }
 
         $guardian->delete();
 
