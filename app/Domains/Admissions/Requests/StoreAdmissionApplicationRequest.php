@@ -3,6 +3,7 @@
 namespace App\Domains\Admissions\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAdmissionApplicationRequest extends FormRequest
 {
@@ -22,8 +23,8 @@ class StoreAdmissionApplicationRequest extends FormRequest
             'national_id' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string', 'max:255'],
             'previous_school' => ['nullable', 'string', 'max:150'],
-            'intake_academic_year_id' => ['nullable', 'exists:academic_years,id'],
-            'grade_level_id' => ['nullable', 'exists:grade_levels,id'],
+            'intake_academic_year_id' => ['required', 'exists:academic_years,id'],
+            'grade_level_id' => ['required', Rule::exists('grade_levels', 'id')->where(fn ($query) => $query->where('is_active', true)->whereNotNull('stage'))],
             'source_inquiry_id' => ['nullable', 'exists:inquiries,id'],
             'guardians' => ['required', 'array', 'min:1'],
             'guardians.*.first_name' => ['required', 'string', 'max:100'],
