@@ -39,7 +39,7 @@ return [
             'dashboard.view',
             'students.view', 'students.create', 'students.edit',
             'students.medical', 'students.documents', 'students.transfer', 'students.promote',
-            'guardians.view', 'guardians.create', 'guardians.edit',
+
             'academics.view', 'academics.create', 'academics.edit',
             'attendance.view',
             'attendance.approve', 'attendance.configure',
@@ -78,7 +78,7 @@ return [
             'dashboard.view',
             'students.view', 'students.create', 'students.edit',
             'students.medical', 'students.documents', 'students.transfer', 'students.promote',
-            'guardians.view', 'guardians.create', 'guardians.edit',
+
             'academics.view', 'academics.create', 'academics.edit',
             'attendance.view', 'attendance.create', 'attendance.edit',
             'attendance.approve',
@@ -95,7 +95,7 @@ return [
             'dashboard.view',
             'students.view', 'students.create', 'students.edit', 'students.export',
             'students.medical', 'students.documents', 'students.transfer', 'students.promote',
-            'guardians.view', 'guardians.create', 'guardians.edit',
+
             'academics.view',
             'attendance.view', 'attendance.create', 'attendance.edit',
             'attendance.approve',
@@ -130,7 +130,7 @@ return [
         'teacher' => [
             'dashboard.view',
             'students.view',
-            'guardians.view',
+
             'attendance.view', 'attendance.create', 'attendance.edit',
             'exams.view',
             'reports.view',
