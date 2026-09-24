@@ -4,7 +4,7 @@ namespace App\Domains\Admissions\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreApplicationParentRequest extends FormRequest
+class StoreApplicationGuardianRequest extends FormRequest
 {
     public function authorize(): bool
     {
