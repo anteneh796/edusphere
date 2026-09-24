@@ -248,57 +248,57 @@
             </dl>
         </x-card>
 
-        {{-- Guardians --}}
-        <x-card :title="__('Guardians')">
+        {{-- Parents --}}
+        <x-card :title="__('Parents')">
             <x-slot:actions>
                 @can('update', $application)
-                    <x-modal title="{{ __('Add guardian') }}">
+                    <x-modal title="{{ __('Add parent') }}">
                         <x-slot:trigger>
                             <button type="button" class="btn btn-ghost btn-sm">
                                 <x-icon name="plus" class="icon-sm" />
                             </button>
                         </x-slot:trigger>
-                        <form method="POST" action="{{ route('admissions.guardians.store', $application) }}">
+                        <form method="POST" action="{{ route('admissions.parents.store', $application) }}">
                             @csrf
-                            @include('admissions.applications._guardian-fields')
+                            @include('admissions.applications._parent-fields')
                             <div class="card-footer">
-                                <button type="submit" class="btn btn-primary">{{ __('Add guardian') }}</button>
+                                <button type="submit" class="btn btn-primary">{{ __('Add parent') }}</button>
                             </div>
                         </form>
                     </x-modal>
                 @endcan
             </x-slot:actions>
 
-            @forelse ($application->guardians as $guardian)
+            @forelse ($application->parents as $parent)
                 <div class="list-row">
                     <div class="avatar-cell">
-                        <x-avatar :initials="strtoupper(substr($guardian->first_name, 0, 1).substr($guardian->last_name, 0, 1))" size="sm" />
+                        <x-avatar :initials="strtoupper(substr($parent->first_name, 0, 1).substr($parent->last_name, 0, 1))" size="sm" />
                         <div style="min-width:0;">
                             <div style="font-weight: var(--weight-semibold);">
-                                {{ $guardian->full_name }}
-                                @if ($guardian->is_primary)
+                                {{ $parent->full_name }}
+                                @if ($parent->is_primary)
                                     <x-badge color="primary">{{ __('Primary') }}</x-badge>
                                 @endif
                             </div>
                             <div class="text-xs text-muted">
-                                {{ \Illuminate\Support\Str::headline($guardian->relationship) }}
-                                @if ($guardian->is_emergency)
+                                {{ \Illuminate\Support\Str::headline($parent->relationship) }}
+                                @if ($parent->is_emergency)
                                     · {{ __('Emergency contact') }}
                                 @endif
                             </div>
                             <div class="text-xs text-muted">
-                                {{ $guardian->phone ?? '' }}
-                                {{ $guardian->phone && $guardian->email ? '·' : '' }}
-                                {{ $guardian->email ?? '' }}
+                                {{ $parent->phone ?? '' }}
+                                {{ $parent->phone && $parent->email ? '·' : '' }}
+                                {{ $parent->email ?? '' }}
                             </div>
                         </div>
                     </div>
                     @can('update', $application)
                         <button type="button" class="btn btn-ghost btn-sm btn-icon text-danger" :title="__('Remove')"
                             @click="$store.confirm.ask({
-                                title: @js(__('Remove guardian?')),
-                                message: @js($guardian->full_name.' '.__('will be removed from this application.')),
-                                action: @js(route('admissions.guardians.destroy', [$application, $guardian])),
+                                title: @js(__('Remove parent?')),
+                                message: @js($parent->full_name.' '.__('will be removed from this application.')),
+                                action: @js(route('admissions.parents.destroy', [$application, $parent])),
                                 method: 'DELETE'
                             })">
                             <x-icon name="trash" class="icon-sm" />
@@ -306,7 +306,7 @@
                     @endcan
                 </div>
             @empty
-                <x-empty-state icon="users" :title="__('No guardians')" :message="__('Add a guardian for this applicant.')" />
+                <x-empty-state icon="users" :title="__('No parents')" :message="__('Add a parent for this applicant.')" />
             @endforelse
         </x-card>
 
@@ -518,7 +518,7 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="comm-message">{{ __('Message') }}</label>
-                                <textarea id="comm-message" name="message" class="form-control" rows="3">{{ $application->primaryGuardian?->full_name ? __('Prepared for: :name', ['name' => $application->primaryGuardian->full_name]) : '' }}</textarea>
+                                <textarea id="comm-message" name="message" class="form-control" rows="3">{{ $application->primaryParent?->full_name ? __('Prepared for: :name', ['name' => $application->primaryParent->full_name]) : '' }}</textarea>
                             </div>
                             <div class="card-footer">
                                 <button type="submit" class="btn btn-primary">{{ __('Log communication') }}</button>
