@@ -104,6 +104,95 @@ class AdmissionService
 
         return $application->fresh(['gradeLevel', 'intakeYear', 'primaryGuardian', 'sourceInquiry']);
     }
+    public function createDraftFromInquiry(Inquiry $inquiry, string $gradeLevelId, string $academicYearId): AdmissionApplication
+    {
+        if ($inquiry->type !== 'admissions') {
+            throw ValidationException::withMessages([
+                'inquiry' => __('Only admissions inquiries can be converted into admission applications.'),
+            ]);
+        }
+
+        if ($inquiry->handled_at || AdmissionApplication::where('source_inquiry_id', $inquiry->getKey())->exists()) {
+            throw ValidationException::withMessages([
+                'inquiry' => __('This inquiry has already been converted into an admission application.'),
+            ]);
+        }
+
+        $grade = GradeLevel::query()->whereKey($gradeLevelId)->where('is_active', true)->first();
+        $year = AcademicYear::query()->find($academicYearId);
+
+        if (! $grade || $grade->stage === null) {
+            throw ValidationException::withMessages([
+                'grade_level_id' => __('Please select an active KG through Grade 8 admission grade.'),
+            ]);
+        }
+
+        if (! $year) {
+            throw ValidationException::withMessages([
+                'intake_academic_year_id' => __('The selected academic year is invalid.'),
+            ]);
+        }
+
+        $studentName = trim((string) ($inquiry->student_name ?: $inquiry->full_name));
+        $parts = preg_split('/\\s+/', $studentName, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $firstName = $parts[0] ?? 'Applicant';
+        $lastName = count($parts) > 1 ? array_pop($parts) : $firstName;
+        $otherNames = count($parts) > 1 ? implode(' ', array_slice($parts, 1)) : null;
+
+        $application = DB::transaction(function () use ($inquiry, $grade, $year, $firstName, $lastName, $otherNames) {
+            $application = AdmissionApplication::create([
+                'application_number' => $this->generateApplicationNumber(),
+                'status' => AdmissionStatus::Draft->value,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'other_names' => $otherNames,
+                'intake_academic_year_id' => $year->getKey(),
+                'grade_level_id' => $grade->getKey(),
+                'source_inquiry_id' => $inquiry->getKey(),
+                'created_by' => auth()->id(),
+            ]);
+
+            if ($inquiry->full_name || $inquiry->email || $inquiry->phone) {
+                $guardianParts = preg_split('/\\s+/', trim((string) $inquiry->full_name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                $guardianFirst = $guardianParts[0] ?? 'Guardian';
+                $guardianLast = count($guardianParts) > 1 ? implode(' ', array_slice($guardianParts, 1)) : $guardianFirst;
+
+                $application->guardians()->create([
+                    'first_name' => $guardianFirst,
+                    'last_name' => $guardianLast,
+                    'relationship' => 'guardian',
+                    'phone' => $inquiry->phone,
+                    'email' => $inquiry->email,
+                    'is_primary' => true,
+                ]);
+            }
+
+            $inquiry->update([
+                'status' => 'handled',
+                'handled_at' => now(),
+                'handled_by' => auth()->id(),
+            ]);
+
+            return $application;
+        });
+
+        $this->notifications->sendToRoles(
+            [RoleName::Registrar->value, RoleName::SchoolAdmin->value],
+            $this->payload(
+                $application,
+                'admission',
+                'application',
+                __('Admission inquiry converted'),
+                __('Inquiry for :name was converted to application :number.', [
+                    'name' => $application->full_name,
+                    'number' => $application->application_number,
+                ])
+            )
+        );
+
+        return $application->fresh(['gradeLevel', 'intakeYear', 'primaryGuardian', 'sourceInquiry']);
+    }
+
     public function updateApplication(AdmissionApplication $application, array $data): AdmissionApplication
     {
         $guardians = $data['guardians'] ?? null;
@@ -239,8 +328,18 @@ class AdmissionService
             AdmissionStatus::UnderReview->value,
         ]);
 
-        if ($decision === 'reject') {
+        if ($decision === 'rejected') {
             return $this->reject($application, $comment);
+        }
+
+        if ($decision === 'waitlisted') {
+            return $this->waitlist($application, $comment);
+        }
+
+        if ($decision !== 'approved') {
+            throw ValidationException::withMessages([
+                'decision' => __('The selected admission decision is invalid.'),
+            ]);
         }
 
         if ($this->isGradeFull($application) && ! $force && ! $this->allowsOverride($application)) {
@@ -269,6 +368,7 @@ class AdmissionService
     public function reject(AdmissionApplication $application, ?string $comment = null): string
     {
         $this->guardTransition($application, [
+            AdmissionStatus::Submitted->value,
             AdmissionStatus::PendingApproval->value,
             AdmissionStatus::UnderReview->value,
             AdmissionStatus::Waitlisted->value,
@@ -293,12 +393,16 @@ class AdmissionService
     public function waitlist(AdmissionApplication $application, ?string $comment = null): string
     {
         $this->guardTransition($application, [
+            AdmissionStatus::Submitted->value,
             AdmissionStatus::PendingApproval->value,
             AdmissionStatus::UnderReview->value,
             AdmissionStatus::Approved->value,
         ]);
 
-        $position = (AdmissionApplication::waitlisted()->max('waitlist_position') ?? 0) + 1;
+        $position = (AdmissionApplication::waitlisted()
+            ->where('grade_level_id', $application->grade_level_id)
+            ->where('intake_academic_year_id', $application->intake_academic_year_id)
+            ->max('waitlist_position') ?? 0) + 1;
 
         $application->update([
             'status' => AdmissionStatus::Waitlisted->value,
@@ -324,6 +428,12 @@ class AdmissionService
     public function promote(AdmissionApplication $application): void
     {
         $this->guardTransition($application, [AdmissionStatus::Waitlisted->value]);
+
+        if ($this->isGradeFull($application)) {
+            throw ValidationException::withMessages([
+                'status' => __('The selected grade is still at capacity. Free a seat before promoting this applicant.'),
+            ]);
+        }
 
         $application->update([
             'status' => AdmissionStatus::Approved->value,
@@ -464,19 +574,23 @@ class AdmissionService
             return null;
         }
 
-        $user = User::create([
-            'first_name' => $guardian->first_name,
-            'last_name' => $guardian->last_name,
-            'email' => $guardian->email,
-            'password' => Str::password(16),
-            'status' => 'active',
-            'must_change_password' => true,
-            'email_verified_at' => now(),
-        ]);
+        $user = User::query()->where('email', $guardian->email)->first();
+
+        if (! $user) {
+            $user = User::create([
+                'first_name' => $guardian->first_name,
+                'last_name' => $guardian->last_name,
+                'email' => $guardian->email,
+                'password' => Str::password(16),
+                'status' => 'active',
+                'must_change_password' => true,
+                'email_verified_at' => now(),
+            ]);
+        }
 
         $role = Role::where('name', RoleName::Parent->value)->first();
         if ($role) {
-            $user->roles()->attach($role);
+            $user->roles()->syncWithoutDetaching([$role->getKey()]);
         }
 
         return $user;
@@ -537,7 +651,11 @@ class AdmissionService
         $approvedPending = AdmissionApplication::where('grade_level_id', $grade->getKey())
             ->where('intake_academic_year_id', $year?->getKey())
             ->where('status', AdmissionStatus::Approved->value)
-            ->when($excludeApplicationId, fn ($query) => $query->whereKeyNot($excludeApplicationId))
+            ->when($excludeApplicationId, fn ($query) => $query->where(
+                $query->getModel()->getKeyName(),
+                '!=',
+                $excludeApplicationId
+            ))
             ->count();
 
         return $students + $approvedPending;
