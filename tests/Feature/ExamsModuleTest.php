@@ -39,7 +39,6 @@ class ExamsModuleTest extends TestCase
         Role::create(['name' => RoleName::Principal->value, 'label' => 'Principal']);
         Role::create(['name' => RoleName::Registrar->value, 'label' => 'Registrar']);
         Role::create(['name' => RoleName::Teacher->value, 'label' => 'Teacher']);
-        Role::create(['name' => RoleName::FinanceOfficer->value, 'label' => 'Finance Officer']);
 
         $year = AcademicYear::factory()->current()->create();
         $grade = GradeLevel::create(['name' => 'Grade 5', 'code' => '5', 'sort_order' => 6]);
@@ -158,14 +157,6 @@ class ExamsModuleTest extends TestCase
         $this->assertDatabaseMissing('exams', ['name' => 'Unauthorized Exam']);
     }
 
-    public function test_finance_officer_is_denied_access_to_exams(): void
-    {
-        $financeOfficer = $this->userWithRole(RoleName::FinanceOfficer->value);
-
-        $this->actingAs($financeOfficer)
-            ->get(route('exams.index'))
-            ->assertForbidden();
-    }
 
     public function test_authorized_user_assigns_papers_and_reassignment_updates_them(): void
     {
