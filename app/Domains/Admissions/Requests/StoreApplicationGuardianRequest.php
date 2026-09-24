@@ -16,7 +16,7 @@ class StoreApplicationGuardianRequest extends FormRequest
         return [
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
-            'relationship' => ['required', 'in:father,mother,guardian,sibling'],
+            'relationship' => ['required', 'in:father,mother,grandparent,sibling,other'],
             'phone' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:150'],
             'occupation' => ['nullable', 'string', 'max:100'],
