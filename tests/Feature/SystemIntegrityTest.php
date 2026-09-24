@@ -77,11 +77,15 @@ class SystemIntegrityTest extends TestCase
             ->filter()
             ->values();
 
-        $this->assertSame(
-            $permissions->count(),
-            $permissions->unique()->count(),
-            'A role should not contain duplicate permissions.'
-        );
+        foreach ($roles as $roleName => $rolePermissions) {
+            $rolePermissions = collect($rolePermissions)->filter()->values();
+
+            $this->assertSame(
+                $rolePermissions->count(),
+                $rolePermissions->unique()->count(),
+                "Role [{$roleName}] should not contain duplicate permissions."
+            );
+        }
 
         $this->assertFalse(
             $permissions->contains(fn (string $permission) => str_starts_with($permission, 'finance.')),
