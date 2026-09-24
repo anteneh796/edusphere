@@ -499,7 +499,7 @@ class ParentPortalTest extends TestCase
 
         $otherParent = User::factory()->create(['status' => 'active']);
         $otherParent->roles()->attach(Role::where('name', RoleName::Parent->value)->firstOrFail());
-        $otherProfile = \\App\Domains\Students\Models\Guardian::factory()->create(['user_id' => $otherParent->getKey()]);
+        $otherProfile = \App\Domains\Students\Models\Guardian::factory()->create(['user_id' => $otherParent->getKey()]);
         $otherStudent = Student::factory()->create([
             'class_room_id' => $scenario['student']->class_room_id,
             'academic_year_id' => $scenario['student']->academic_year_id,
