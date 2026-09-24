@@ -95,7 +95,7 @@ class ParentServicesController extends Controller
             'completed_at' => $validated['status'] === ParentRequestStatus::Completed->value ? now() : null,
         ]);
 
-        $this->notifyGuardian($request->guardian_id, (string) $request->student?->full_name, [
+        $this->notifyParent($request->guardian_id, (string) $request->student?->full_name, [
             'type' => 'request',
             'category' => 'system',
             'priority' => 'low',
@@ -115,10 +115,10 @@ class ParentServicesController extends Controller
             ->with('status', __('Request marked as :status.', ['status' => $validated['status']]));
     }
 
-    private function notifyGuardian(string $parentId, string $studentName, array $payload): void
+    private function notifyParent(string $parentId, string $studentName, array $payload): void
     {
         $userIds = Guardian::query()
-            ->whereKey($guardianId)
+            ->whereKey($parentId)
             ->value('user_id');
 
         if (! $userIds) {
