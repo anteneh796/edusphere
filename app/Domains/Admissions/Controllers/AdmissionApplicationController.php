@@ -280,7 +280,7 @@ class AdmissionApplicationController extends Controller
 
         return redirect()->route('admissions.applications.show', $application)
             ->with('status', $student->full_name.' enrolled as '.$student->student_number.'.')
-            ->setStatusCode(201);
+            ;
     }
 
     private function transition(string $method, AdmissionApplication $application, string $success, ?string $parameter = null): RedirectResponse
