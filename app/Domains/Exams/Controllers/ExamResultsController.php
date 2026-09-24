@@ -16,9 +16,36 @@ class ExamResultsController extends Controller
 {
     public function __construct(private readonly ExamsService $examsService) {}
 
+    private function assertResultAccess(ExamSubject $paper): void
+    {
+        $user = request()->user();
+
+        if (! $user) {
+            abort(403);
+        }
+
+        if (! $user->hasRole('teacher')) {
+            if (! $user->hasPermission('exams.edit')) {
+                abort(403);
+            }
+
+            return;
+        }
+
+        $assigned = \App\Domains\Academics\Models\ClassSubject::query()
+            ->where('class_room_id', $paper->class_room_id)
+            ->where('subject_id', $paper->subject_id)
+            ->where('teacher_id', $user->getKey())
+            ->exists();
+
+        if (! $assigned) {
+            abort(403);
+        }
+    }
+
     public function board(ExamSubject $paper): View
     {
-        $this->authorize('enterResults', $paper->exam);
+        $this->assertResultAccess($paper);
 
         $paper->load(['exam.academicYear', 'classRoom.gradeLevel', 'subject', 'results.student']);
 
@@ -46,7 +73,7 @@ class ExamResultsController extends Controller
 
     public function save(SaveExamResultsRequest $request, ExamSubject $paper): RedirectResponse
     {
-        $this->authorize('enterResults', $paper->exam);
+        $this->assertResultAccess($paper);
 
         $marks = collect($request->validated('results'))
             ->map(fn ($row) => $row['marks_obtained'] ?? null)
