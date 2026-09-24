@@ -35,23 +35,6 @@
                 @endforelse
             </x-card>
 
-            <x-card :title="__('Payment receipts')">
-                @forelse ($receipts as $payment)
-                    <div class="list-row">
-                        <x-icon name="receipt" class="icon-sm text-light" />
-                        <div class="min-w-0 flex-1">
-                            <div class="truncate">{{ $payment->payment_number }}</div>
-                            <div class="text-xs text-light">{{ $payment->paid_at?->format('d M Y') ?? '—' }}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-sm-semibold">{{ number_format((float) $payment->amount, 2) }}</div>
-                            <a href="{{ route('cms.parent.receipts.show', $payment) }}" class="btn btn-ghost btn-sm">{{ __('View') }}</a>
-                        </div>
-                    </div>
-                @empty
-                    <x-empty-state icon="receipt" :title="__('No receipts yet')" :message="__('Confirmed payment receipts will appear here.')" />
-                @endforelse
-            </x-card>
         </div>
     @endif
 </x-layouts.app>
