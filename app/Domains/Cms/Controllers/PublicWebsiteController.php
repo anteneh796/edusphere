@@ -224,10 +224,15 @@ class PublicWebsiteController extends Controller
                 'lastmod' => $item->published_at,
             ]));
 
-        Event::published()->orderBy('starts_at')->get()
-            ->each(fn (Event $event) => $urls->push((object) [
-                'loc' => route('public.events'), 'lastmod' => null,
-            ]));
+        // Events are represented by the public calendar page itself; do not
+        // add the same URL once per event to the sitemap.
+        $latestEvent = Event::published()->orderByDesc('updated_at')->first();
+        if ($latestEvent) {
+            $urls->push((object) [
+                'loc' => route('public.events'),
+                'lastmod' => $latestEvent->updated_at,
+            ]);
+        }
 
         Page::published()->whereNotIn('slug', ['home', 'about', 'academics', 'admissions', 'contact'])->get()
             ->each(fn (Page $page) => $urls->push((object) [
