@@ -140,7 +140,9 @@ class StudentController extends Controller
         $year = $this->studentService->currentYear();
         $classRooms = ClassRoom::where('academic_year_id', $year->getKey())->with('gradeLevel')->orderBy('name')->get();
         $selected = $request->filled('class_room_id')
-            ? ClassRoom::with('gradeLevel')->findOrFail($request->input('class_room_id'))
+            ? ClassRoom::with('gradeLevel')
+                ->where('academic_year_id', $year->getKey())
+                ->findOrFail($request->input('class_room_id'))
             : null;
 
         $students = collect();
@@ -209,7 +211,9 @@ class StudentController extends Controller
         $nextYear = AcademicYear::where('start_date', '>', $year->start_date)->orderBy('start_date')->first();
 
         if ($request->filled('class_room_id')) {
-            $selectedClass = ClassRoom::with('gradeLevel')->findOrFail($request->input('class_room_id'));
+            $selectedClass = ClassRoom::with('gradeLevel')
+                ->where('academic_year_id', $year->getKey())
+                ->findOrFail($request->input('class_room_id'));
             $candidates = $this->studentService->promotionCandidates($selectedClass);
 
             $nextYear = AcademicYear::find($request->input('target_academic_year_id')) ?? $nextYear;
@@ -224,6 +228,8 @@ class StudentController extends Controller
 
         $class = ClassRoom::with('gradeLevel')->findOrFail($request->input('class_room_id'));
         $year = AcademicYear::findOrFail($request->input('target_academic_year_id'));
+
+        abort_unless((int) $class->academic_year_id === (int) $this->studentService->currentYear()->getKey(), 422, 'The source class must belong to the active academic year.');
 
         $result = $this->studentService->promote($class, $year, $request->input('note'), auth()->id());
         ActivityLogger::log('promoted '.(int) $result['promoted'].' students from '.$class->name, 'students');
@@ -241,13 +247,14 @@ class StudentController extends Controller
         $this->studentService->addEmergencyContact($student, $request->validated(), auth()->id());
         ActivityLogger::log('added emergency contact for '.$student->full_name, 'students', $student->id);
 
-        return redirect()->route('students.show', url(route('students.show', $student).'#emergency'))
+        return redirect()->to(route('students.show', $student).'#emergency')
             ->with('status', 'Emergency contact added.');
     }
 
     public function emergencyContactUpdate(SaveEmergencyContactRequest $request, Student $student, EmergencyContact $contact): RedirectResponse
     {
         $this->authorize('update', $student);
+        abort_unless((int) $contact->student_id === (int) $student->getKey(), 404);
 
         $contact->update($request->validated());
 
@@ -258,6 +265,7 @@ class StudentController extends Controller
     public function emergencyContactDestroy(Student $student, EmergencyContact $contact): RedirectResponse
     {
         $this->authorize('update', $student);
+        abort_unless((int) $contact->student_id === (int) $student->getKey(), 404);
 
         $contact->delete();
 
@@ -274,7 +282,7 @@ class StudentController extends Controller
         $this->studentService->saveMedicalRecord($student, $request->validated(), auth()->id());
         ActivityLogger::log('updated medical record for '.$student->full_name, 'students', $student->id);
 
-        return redirect()->route('students.show', url(route('students.show', $student).'#medical'))
+        return redirect()->to(route('students.show', $student).'#medical')
             ->with('status', 'Medical record saved.');
     }
 
