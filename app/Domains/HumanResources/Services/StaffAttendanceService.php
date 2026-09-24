@@ -19,13 +19,24 @@ class StaffAttendanceService
                 continue;
             }
 
-            StaffAttendance::updateOrCreate(
-                ['employee_id' => $employeeId, 'attendance_date' => $date->toDateString()],
-                [
+            $record = StaffAttendance::query()
+                ->where('employee_id', $employeeId)
+                ->whereDate('attendance_date', $date)
+                ->first();
+
+            if ($record) {
+                $record->update([
                     'status' => $status,
                     'recorded_by_id' => $recordedBy->getKey(),
-                ]
-            );
+                ]);
+            } else {
+                StaffAttendance::create([
+                    'employee_id' => $employeeId,
+                    'attendance_date' => $date->toDateString(),
+                    'status' => $status,
+                    'recorded_by_id' => $recordedBy->getKey(),
+                ]);
+            }
         }
 
         ActivityLogger::log('recorded staff attendance for '.$date->toDateString(), 'hr', null, [
