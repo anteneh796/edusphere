@@ -76,7 +76,8 @@ class LeaveService
 
         ActivityLogger::log($status->label().' leave request for '.$request->employee_id, 'hr', $request->getKey());
 
-        $this->notifications->sendToUser($request->employee->user_id, [
+        if ($request->employee->user_id) {
+            $this->notifications->sendToUser($request->employee->user_id, [
             'type' => 'leave',
             'category' => 'leave',
             'priority' => $status === LeaveRequestStatus::Approved ? 'medium' : 'low',
@@ -88,7 +89,8 @@ class LeaveService
                 'status' => strtolower($status->label()),
             ]),
             'redirect_url' => route('hr.leave.show', $request),
-        ]);
+            ]);
+        }
 
         return $request->load('employee', 'leaveType');
     }
