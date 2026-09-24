@@ -85,11 +85,11 @@
         </div>
     </div>
 
-    <h3 class="section-title">Primary guardian</h3>
+    <h3 class="section-title">Primary parent</h3>
 
     <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: var(--space-2);">
-        <x-input name="guardian[first_name]" label="Guardian first name" :value="old('guardian.first_name', $guardian ? $guardian->first_name : null)" placeholder="e.g. Almaz" :required="! $editing" :error="$errors->first('guardian.first_name')" />
-        <x-input name="guardian[last_name]" label="Guardian last name" :value="old('guardian.last_name', $guardian ? $guardian->last_name : null)" placeholder="e.g. Bekele" :required="! $editing" :error="$errors->first('guardian.last_name')" />
+        <x-input name="guardian[first_name]" label="Parent first name" :value="old('guardian.first_name', $guardian ? $guardian->first_name : null)" placeholder="e.g. Almaz" :required="! $editing" :error="$errors->first('guardian.first_name')" />
+        <x-input name="guardian[last_name]" label="Parent last name" :value="old('guardian.last_name', $guardian ? $guardian->last_name : null)" placeholder="e.g. Bekele" :required="! $editing" :error="$errors->first('guardian.last_name')" />
         <x-select name="guardian[relationship]" label="Relationship" :options="$relationshipOptions" :value="old('guardian.relationship', $guardian ? $guardian->relationship : null)" placeholder="Select relationship…" :required="! $editing" :error="$errors->first('guardian.relationship')" />
         <x-input name="guardian[phone]" label="Phone" :value="old('guardian.phone', $guardian ? $guardian->phone : null)" placeholder="+251 9xx xxx xxx" :error="$errors->first('guardian.phone')" />
         <x-input name="guardian[email]" type="email" label="Email" :value="old('guardian.email', $guardian ? $guardian->email : null)" placeholder="Optional" :error="$errors->first('guardian.email')" />
@@ -97,7 +97,7 @@
     </div>
 
     @if ($editing)
-        <div class="form-hint">Guardian fields above update the primary guardian. Leave blank to keep the current record unchanged.</div>
+        <div class="form-hint">Parent fields above update the primary parent. Leave blank to keep the current record unchanged.</div>
     @endif
 
 </div>
