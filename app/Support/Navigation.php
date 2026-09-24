@@ -59,8 +59,6 @@ class Navigation
                 ],
             ],
             [
-            ],
-            [
                 'title' => __('Human Resources'),
                 'items' => [
                     ['label' => __('HR Dashboard'), 'route' => 'hr.dashboard', 'icon' => 'users', 'enabled' => true, 'permissions' => ['hr.view']],
