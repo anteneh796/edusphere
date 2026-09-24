@@ -4,6 +4,7 @@ namespace App\Domains\Attendance\Controllers;
 
 use App\Domains\Academics\Models\AcademicYear;
 use App\Domains\Academics\Models\ClassRoom;
+use App\Domains\Academics\Models\ClassSubject;
 use App\Domains\Attendance\Models\AttendanceCorrection;
 use App\Domains\Attendance\Models\AttendanceSession;
 use App\Domains\Attendance\Requests\StartAttendanceRequest;
@@ -36,6 +37,7 @@ class AttendanceController extends Controller
 
         $sessions = AttendanceSession::query()
             ->with(['classRoom.gradeLevel', 'classRoom.academicYear', 'takenBy'])
+            ->when($this->isTeacher(), fn ($query) => $query->whereIn('class_room_id', $this->teacherClassRoomIds()))
             ->withCount('records')
             ->when(request('class_room_id'), fn ($query, $classId) => $query->where('class_room_id', $classId))
             ->when(request('grade_level_id'), function ($query, $gradeId) {
@@ -51,8 +53,14 @@ class AttendanceController extends Controller
 
         $classes = $this->classesForYear($currentYear->getKey());
 
-        $openCount = AttendanceSession::open()->count();
-        $todayCount = AttendanceSession::forDate(Carbon::today()->format('Y-m-d'))->count();
+        $openCount = AttendanceSession::query()
+            ->open()
+            ->when($this->isTeacher(), fn ($query) => $query->whereIn('class_room_id', $this->teacherClassRoomIds()))
+            ->count();
+        $todayCount = AttendanceSession::query()
+            ->forDate(Carbon::today()->format('Y-m-d'))
+            ->when($this->isTeacher(), fn ($query) => $query->whereIn('class_room_id', $this->teacherClassRoomIds()))
+            ->count();
 
         return view('attendance.index', compact('sessions', 'classes', 'currentYear', 'openCount', 'todayCount'));
     }
@@ -76,11 +84,19 @@ class AttendanceController extends Controller
 
         $classRoom = ClassRoom::findOrFail($request->validated('class_room_id'));
 
-        $session = $this->attendanceService->openSession(
+        if ($this->isTeacher() && ! in_array($classRoom->getKey(), $this->teacherClassRoomIds(), true)) {
+            abort(403);
+        }
+
+        try {
+            $session = $this->attendanceService->openSession(
             $classRoom,
             $request->validated('date'),
             $request->user()->id
-        );
+            );
+        } catch (\DomainException $e) {
+            return back()->withErrors(['date' => $e->getMessage()])->withInput();
+        }
 
         ActivityLogger::log(
             'opened attendance for '.$classRoom->name.' on '.$session->date,
@@ -140,7 +156,11 @@ class AttendanceController extends Controller
                 ->withErrors(['records' => 'This session is locked and can no longer be edited directly. Request a correction instead.']);
         }
 
-        $this->attendanceService->upsertRecords($session, $request->user()->id, $request->validated('records'));
+        try {
+            $this->attendanceService->upsertRecords($session, $request->user()->id, $request->validated('records'));
+        } catch (\DomainException $e) {
+            return back()->withErrors(['records' => $e->getMessage()])->withInput();
+        }
 
         ActivityLogger::log('recorded attendance for '.$session->classRoom->name.' on '.$session->date, 'attendance', $session->id);
 
@@ -186,7 +206,7 @@ class AttendanceController extends Controller
         $this->authorize('viewAny', AttendanceSession::class);
 
         $currentYear = $this->attendanceService->currentYear();
-        $today = $this->attendanceService->todayStats();
+        $today = $this->attendanceService->todayStats($this->isTeacher() ? $this->teacherClassRoomIds() : null);
 
         return view('attendance.dashboard', compact('today', 'currentYear'));
     }
@@ -203,6 +223,7 @@ class AttendanceController extends Controller
     public function reportsDaily(): View
     {
         $this->authorize('viewAny', AttendanceSession::class);
+        $this->assertReportAccess();
 
         $currentYear = $this->attendanceService->currentYear();
         $classes = $this->classesForYear($currentYear->getKey());
@@ -220,6 +241,7 @@ class AttendanceController extends Controller
     public function reportsStudent(): View
     {
         $this->authorize('viewAny', AttendanceSession::class);
+        $this->assertReportAccess();
 
         $from = request('from', Carbon::now()->startOfYear()->toDateString());
         $to = request('to', Carbon::today()->toDateString());
@@ -248,6 +270,7 @@ class AttendanceController extends Controller
     public function reportsMonthly(): View
     {
         $this->authorize('viewAny', AttendanceSession::class);
+        $this->assertReportAccess();
 
         $currentYear = $this->attendanceService->currentYear();
 
@@ -274,6 +297,7 @@ class AttendanceController extends Controller
     public function reportsStatus(): View
     {
         $this->authorize('viewAny', AttendanceSession::class);
+        $this->assertReportAccess();
 
         $currentYear = $this->attendanceService->currentYear();
         $classes = $this->classesForYear($currentYear->getKey());
@@ -298,6 +322,7 @@ class AttendanceController extends Controller
     public function reportsTrend(): View
     {
         $this->authorize('viewAny', AttendanceSession::class);
+        $this->assertReportAccess();
 
         $from = request('from', Carbon::now()->startOfMonth()->toDateString());
         $to = request('to', Carbon::now()->endOfMonth()->toDateString());
@@ -314,6 +339,7 @@ class AttendanceController extends Controller
     public function reportsCompletion(): View
     {
         $this->authorize('viewAny', AttendanceSession::class);
+        $this->assertReportAccess();
 
         $currentYear = $this->attendanceService->currentYear();
 
@@ -332,6 +358,7 @@ class AttendanceController extends Controller
     public function reportsClass(): View
     {
         $this->authorize('viewAny', AttendanceSession::class);
+        $this->assertReportAccess();
 
         $currentYear = $this->attendanceService->currentYear();
         $classes = $this->classesForYear($currentYear->getKey());
@@ -361,6 +388,7 @@ class AttendanceController extends Controller
     public function reportsGrade(): View
     {
         $this->authorize('viewAny', AttendanceSession::class);
+        $this->assertReportAccess();
 
         $currentYear = $this->attendanceService->currentYear();
 
@@ -375,6 +403,7 @@ class AttendanceController extends Controller
     public function reportsLate(): View
     {
         $this->authorize('viewAny', AttendanceSession::class);
+        $this->assertReportAccess();
 
         $currentYear = $this->attendanceService->currentYear();
         $classes = $this->classesForYear($currentYear->getKey());
@@ -405,6 +434,7 @@ class AttendanceController extends Controller
     public function reportsTerm(): View
     {
         $this->authorize('viewAny', AttendanceSession::class);
+        $this->assertReportAccess();
 
         $currentYear = $this->attendanceService->currentYear();
 
@@ -493,7 +523,7 @@ class AttendanceController extends Controller
         $absentThreshold = (int) Setting::value('absence_alert_threshold', config('attendance.defaults.absence_alert_threshold', 3));
         $lateThreshold = (int) Setting::value('late_alert_threshold', config('attendance.defaults.late_alert_threshold', 5));
 
-        $rows = $this->attendanceService->studentAlerts($absentThreshold, $lateThreshold);
+        $rows = $this->attendanceService->studentAlerts($absentThreshold, $lateThreshold, $this->isTeacher() ? $this->teacherClassRoomIds() : null);
 
         return view('attendance.alerts', compact('rows', 'absentThreshold', 'lateThreshold'));
     }
@@ -549,6 +579,27 @@ class AttendanceController extends Controller
         $result = $this->attendanceService->mergeOfflineRecords($request->validated('records', []));
 
         return response()->json($result);
+    }
+
+
+    private function isTeacher(): bool
+    {
+        return auth()->user()?->hasRole('teacher') === true;
+    }
+
+    private function teacherClassRoomIds(): array
+    {
+        return ClassSubject::query()
+            ->where('teacher_id', auth()->id())
+            ->pluck('class_room_id')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function assertReportAccess(): void
+    {
+        abort_unless(! $this->isTeacher(), 403);
     }
 
     private function classesForYear(string $academicYearId): Collection
