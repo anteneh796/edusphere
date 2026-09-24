@@ -1,66 +1,112 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# EduSphere School Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+EduSphere is a Laravel-based school management system designed for a **single school serving KG through Grade 8**.
 
-## About Laravel
+## Product scope
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+EduSphere covers the operational areas needed to run the school:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Student management
+- Academic/class management
+- Admissions
+- Attendance
+- Examinations and report cards
+- Teacher and staff management
+- Human resources
+- Parent portal
+- Student portal
+- Teacher portal
+- Notifications and communication
+- Documents and official records
+- School administration
+- Public school website/CMS
+- Reports, audit, security and system administration
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Explicitly out of scope
 
-## Learning Laravel
+The following are intentionally removed from EduSphere:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- Finance portal
+- Hostel management
+- Library management
+- Inventory management
+- Multi-school/tenant architecture
+- Standalone Guardian role or portal
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Legacy Guardian database/model names may remain internally where required for backward compatibility. User-facing family functionality is **Parent**.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Technology
 
-## Laravel Sponsors
+- Laravel 12
+- PHP 8.3+
+- MySQL 8+
+- Blade
+- Alpine.js
+- Tailwind CSS
+- Vite
+- Laravel Sanctum where API authentication is required
+- PHPUnit/Pest feature testing
+- GitHub Actions CI
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Development
 
-### Premium Partners
+Install dependencies:
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+```powershell
+composer install
+npm install
+copy .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+npm run build
+php artisan serve
+```
 
-## Contributing
+Run the test suite:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```powershell
+php artisan test
+```
 
-## Code of Conduct
+Build frontend assets:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```powershell
+npm run build
+```
 
-## Security Vulnerabilities
+## Architecture
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+The application is organized by domain under `app/Domains`, with shared support code under `app/Support`.
 
-## License
+Core domains include:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- Academics
+- Students
+- Admissions
+- Attendance
+- Exams
+- Human Resources
+- Accounts
+- Notifications
+- CMS
+- Reports
+- Portals
+- Settings
+- Security/Audit
+
+Authorization is permission-driven for staff modules and role-driven for the Student, Parent, and Teacher portals.
+
+## Quality gates
+
+Before a change is considered complete:
+
+1. Routes reference existing controllers and methods.
+2. Route permissions exist in the RBAC source of truth.
+3. Navigation routes exist.
+4. Roles remain synchronized between enum and configuration.
+5. Removed modules do not regain registered routes.
+6. Feature tests cover authorization and important lifecycle rules.
+7. Frontend assets build successfully.
+8. The complete test suite passes.
+
+See `docs/SPRINT-7-COMPLETION.md` for the current product completion scope and quality gates.
