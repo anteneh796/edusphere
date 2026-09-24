@@ -166,7 +166,7 @@ class ReportCardsModuleTest extends TestCase
         }
     }
 
-    public function test_report_cards_index_and_create_pages_are_reachable(): void
+    public function test_report_cards_index_is_reachable_but_generation_requires_exam_edit_access(): void
     {
         $teacher = $this->userWithRole(RoleName::Teacher->value);
 
@@ -176,6 +176,12 @@ class ReportCardsModuleTest extends TestCase
             ->assertSee('Report Cards');
 
         $this->actingAs($teacher)
+            ->get(route('report-cards.create'))
+            ->assertForbidden();
+
+        $principal = $this->userWithRole(RoleName::Principal->value);
+
+        $this->actingAs($principal)
             ->get(route('report-cards.create'))
             ->assertOk()
             ->assertSee('Midterm Examination');
