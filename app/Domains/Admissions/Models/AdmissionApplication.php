@@ -149,6 +149,18 @@ class AdmissionApplication extends Model
         return $this->hasOne(ApplicationGuardian::class, 'application_id')->where('is_primary', true);
     }
 
+    /** @deprecated Internal compatibility alias; UI uses parents(). */
+    public function guardians(): HasMany
+    {
+        return $this->parents();
+    }
+
+    /** @deprecated Internal compatibility alias; UI uses primaryParent(). */
+    public function primaryGuardian(): HasOne
+    {
+        return $this->primaryParent();
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(ApplicantDocument::class)->latest();
