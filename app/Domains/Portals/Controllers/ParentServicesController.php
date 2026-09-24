@@ -60,7 +60,7 @@ class ParentServicesController extends Controller
             'redirect_url' => route('cms.parent.absence-requests'),
         ]);
 
-        return to_route('guardian-services.absences.index')
+        return to_route('parent-services.absences.index')
             ->with('status', __('Absence request marked as :status.', ['status' => $validated['status']]));
     }
 
@@ -68,7 +68,7 @@ class ParentServicesController extends Controller
 
     public function requestsIndex(): View
     {
-        return view('guardian-services.requests.index', [
+        return view('parent-services.requests.index', [
             'requests' => ParentRequest::query()
                 ->with(['guardian', 'student.classRoom.gradeLevel', 'assignedTo'])
                 ->latest()
@@ -111,7 +111,7 @@ class ParentServicesController extends Controller
             'redirect_url' => route('cms.parent.requests'),
         ]);
 
-        return to_route('guardian-services.requests.index')
+        return to_route('parent-services.requests.index')
             ->with('status', __('Request marked as :status.', ['status' => $validated['status']]));
     }
 
