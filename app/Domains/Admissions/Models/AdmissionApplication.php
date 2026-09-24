@@ -139,12 +139,12 @@ class AdmissionApplication extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function guardians(): HasMany
+    public function parents(): HasMany
     {
         return $this->hasMany(ApplicationGuardian::class, 'application_id')->orderByDesc('is_primary');
     }
 
-    public function primaryGuardian(): HasOne
+    public function primaryParent(): HasOne
     {
         return $this->hasOne(ApplicationGuardian::class, 'application_id')->where('is_primary', true);
     }
