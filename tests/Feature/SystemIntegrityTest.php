@@ -92,4 +92,88 @@ class SystemIntegrityTest extends TestCase
             'Removed Finance permissions must not return to RBAC.'
         );
     }
+    public function test_role_enum_and_rbac_configuration_stay_in_sync(): void
+    {
+        $this->assertSame(
+            \App\Support\Enums\RoleName::values(),
+            array_keys(config('rbac.roles', [])),
+            'RoleName and the RBAC configuration must describe the same roles.'
+        );
+
+        $this->assertSame(
+            \App\Support\Enums\RoleName::values(),
+            array_keys(config('rbac.role_labels', [])),
+            'Every application role must have exactly one configured label.'
+        );
+    }
+
+    public function test_navigation_references_only_registered_routes(): void
+    {
+        $routes = collect(Route::getRoutes())
+            ->map(fn ($route) => $route->getName())
+            ->filter()
+            ->unique()
+            ->flip();
+
+        $admin = new \App\Domains\Accounts\Models\User;
+        $admin->setRelation('roles', collect());
+
+        foreach (\App\Support\Navigation::sections() as $section) {
+            foreach ($section['items'] as $item) {
+                $route = $item['route'] ?? null;
+
+                if ($route === null) {
+                    continue;
+                }
+
+                $this->assertArrayHasKey(
+                    $route,
+                    $routes->all(),
+                    "Navigation references unregistered route [{$route}]."
+                );
+            }
+        }
+
+        foreach ([
+            'cms.student.dashboard',
+            'cms.parent.dashboard',
+            'cms.teacher.dashboard',
+        ] as $portalRoute) {
+            $this->assertArrayHasKey(
+                $portalRoute,
+                $routes->all(),
+                "Portal navigation route [{$portalRoute}] must remain registered."
+            );
+        }
+    }
+
+    public function test_removed_modules_have_no_registered_routes(): void
+    {
+        $routeNames = collect(Route::getRoutes())
+            ->map(fn ($route) => $route->getName())
+            ->filter()
+            ->values();
+
+        foreach (['finance', 'hostel', 'library', 'inventory', 'guardian'] as $removedModule) {
+            $this->assertFalse(
+                $routeNames->contains(fn (string $name) => str_contains(strtolower($name), $removedModule)),
+                "Removed module [{$removedModule}] must not have registered routes."
+            );
+        }
+    }
+
+    public function test_registered_route_names_are_unique(): void
+    {
+        $names = collect(Route::getRoutes())
+            ->map(fn ($route) => $route->getName())
+            ->filter()
+            ->values();
+
+        $this->assertSame(
+            $names->count(),
+            $names->unique()->count(),
+            'Named routes must be unique to prevent route shadowing.'
+        );
+    }
+
 }
