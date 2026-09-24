@@ -67,7 +67,7 @@ class ParentPortalController extends Controller
             ->whereKey($student->getKey())
             ->exists();
 
-        abort_unless((bool) $owns, 404);
+        abort_unless((bool) $owns, 403);
     }
 
     private function selectedWard(?Collection $wards = null): ?Student
