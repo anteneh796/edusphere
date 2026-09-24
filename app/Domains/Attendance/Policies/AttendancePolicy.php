@@ -11,8 +11,7 @@ class AttendancePolicy
 {
     public function viewAny(?User $user): bool
     {
-        return (bool) $user?->hasPermission('attendance.view')
-            && ! $user->hasRole(RoleName::Teacher->value);
+        return (bool) $user?->hasPermission('attendance.view');
     }
 
     public function view(?User $user, AttendanceSession $session): bool
@@ -30,8 +29,7 @@ class AttendancePolicy
 
     public function create(?User $user): bool
     {
-        return (bool) $user?->hasPermission('attendance.create')
-            && ! $user->hasRole(RoleName::Teacher->value);
+        return (bool) $user?->hasPermission('attendance.create');
     }
 
     public function update(?User $user, AttendanceSession $session): bool
