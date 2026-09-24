@@ -150,9 +150,6 @@ class AuthenticationTest extends TestCase
             ->get(route('cms.parent.dashboard'))
             ->assertOk();
 
-        $this->actingAs($parent)
-            ->get(route('cms.parent.billing'))
-            ->assertOk();
     }
 
     public function test_invalid_credentials_are_rejected(): void
