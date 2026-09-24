@@ -40,7 +40,7 @@ use Illuminate\View\View;
 
 class ParentPortalController extends Controller
 {
-    private function currentParent(): ?ParentProfile
+    private function currentParent(): ?Guardian
     {
         $user = auth()->user();
 
@@ -518,7 +518,7 @@ class ParentPortalController extends Controller
         ]);
     }
 
-    private function authorizedRecipients(ParentProfile $guardian): Collection
+    private function authorizedRecipients(Guardian $guardian): Collection
     {
         $classRoomIds = $guardian->students()->pluck('class_room_id')->filter()->unique()->values();
 
