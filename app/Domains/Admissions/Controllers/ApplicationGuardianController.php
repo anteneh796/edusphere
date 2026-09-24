@@ -9,7 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Support\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 
-class ApplicationParentController extends Controller
+class ApplicationGuardianController extends Controller
 {
     public function store(StoreApplicationParentRequest $request, AdmissionApplication $application): RedirectResponse
     {
