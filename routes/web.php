@@ -546,7 +546,7 @@ Route::middleware(['auth', 'active', 'force.password'])->group(function () {
             Route::delete('positions/{position}', [PositionController::class, 'destroy'])->middleware('permission:hr.delete')->name('destroy');
         });
 
-        Route::middleware(['permission:hr.payroll'])->name('contracts.')->group(function () {
+        Route::middleware(['permission:hr.view'])->name('contracts.')->group(function () {
             Route::get('contracts', [ContractController::class, 'index'])->name('index');
             Route::get('contracts/create', [ContractController::class, 'create'])->name('create');
             Route::post('contracts', [ContractController::class, 'store'])->name('store');
@@ -609,13 +609,6 @@ Route::middleware(['auth', 'active', 'force.password'])->group(function () {
             Route::post('documents/{document}/verify', [DocumentController::class, 'verify'])->middleware('permission:hr.edit')->name('verify');
             Route::get('documents/{document}/download', [DocumentController::class, 'download'])->name('download');
             Route::delete('documents/{document}', [DocumentController::class, 'destroy'])->middleware('permission:hr.delete')->name('destroy');
-        });
-
-        Route::middleware(['permission:hr.payroll'])->name('payroll.')->group(function () {
-            Route::get('payroll', [PayrollController::class, 'index'])->name('index');
-            Route::get('payroll/{employee}', [PayrollController::class, 'edit'])->name('edit');
-            Route::post('payroll/{employee}', [PayrollController::class, 'store'])->name('store');
-            Route::put('payroll/{employee}', [PayrollController::class, 'update'])->name('update');
         });
 
         Route::name('letters.')->group(function () {
