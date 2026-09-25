@@ -7,6 +7,7 @@ use App\Domains\Academics\Models\ClassRoom;
 use App\Domains\Academics\Models\GradeLevel;
 use App\Domains\Students\Models\EmergencyContact;
 use App\Domains\Students\Models\Student;
+use App\Domains\Students\Models\StudentTransfer;
 use App\Domains\Students\Models\StudentDocument;
 use App\Domains\Students\Models\StudentEnrollment;
 use App\Domains\Students\Requests\PromoteStudentsRequest;
