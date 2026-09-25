@@ -11,7 +11,7 @@
     ];
 @endphp
 
-<div x-data="studentForm()">
+<div x-data="studentForm()" data-student-form>
 
     <h3 class="section-title">Personal details</h3>
 
