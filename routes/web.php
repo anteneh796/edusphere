@@ -295,8 +295,10 @@ Route::middleware(['auth', 'active', 'force.password'])->group(function () {
     });
 
     Route::middleware(['permission:students.view'])->name('students.')->group(function () {
+        Route::get('students/dashboard', [StudentController::class, 'dashboard'])->name('dashboard');
         Route::get('students', [StudentController::class, 'index'])->name('index');
         Route::get('students/roster', [StudentController::class, 'roster'])->name('roster');
+        Route::get('students/export', [StudentController::class, 'export'])->name('export');
 
         Route::middleware(['permission:students.promote'])->group(function () {
             Route::get('students/promote', [StudentController::class, 'promote'])->name('promote');
