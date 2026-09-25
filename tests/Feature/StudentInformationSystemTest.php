@@ -418,4 +418,59 @@ class StudentInformationSystemTest extends TestCase
         $this->assertSame('2026-12-01', StudentTransfer::where('student_id', $student->getKey())->firstOrFail()->transfer_date?->format('Y-m-d'));
         $this->assertSame('2026-12-01', $student->refresh()->enrollments()->where('academic_year_id', $this->currentYear->getKey())->first()?->left_at?->format('Y-m-d'));
     }
+
+    public function test_student_dashboard_shows_current_year_lifecycle_metrics(): void
+    {
+        $registrar = $this->userWithRole(RoleName::Registrar->value);
+        $this->makeStudent($this->class5A);
+        $this->makeStudent($this->class5B);
+        $grade8 = $this->makeStudent($this->class8A);
+
+        $this->actingAs($registrar)
+            ->get(route('students.dashboard'))
+            ->assertOk()
+            ->assertSee('Student Information System')
+            ->assertSee('2')
+            ->assertSee('1');
+    }
+
+    public function test_registrar_can_export_filtered_student_register_as_csv(): void
+    {
+        $registrar = $this->userWithRole(RoleName::Registrar->value);
+        $student = $this->makeStudent($this->class5A);
+
+        $this->actingAs($registrar)
+            ->get(route('students.export', ['class_room_id' => $this->class5A->getKey()]))
+            ->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->assertHeader('content-disposition', fn ($value) => str_contains($value, 'edusphere-students-'))
+            ->assertStreamedContentContains($student->student_number);
+    }
+
+    public function test_registration_can_create_optional_emergency_contact(): void
+    {
+        $registrar = $this->userWithRole(RoleName::Registrar->value);
+
+        $this->actingAs($registrar)
+            ->post(route('students.store'), [
+                ...$this->studentPayload($this->class5A, 'NG-EMERGENCY-1'),
+                'emergency_contact' => [
+                    'name' => 'Alem Berhanu',
+                    'relationship' => 'aunt',
+                    'phone' => '+251922334455',
+                    'priority' => 1,
+                    'authorized_pickup' => 1,
+                ],
+            ])
+            ->assertRedirect();
+
+        $student = Student::where('national_id', 'NG-EMERGENCY-1')->firstOrFail();
+        $this->assertDatabaseHas('student_emergency_contacts', [
+            'student_id' => $student->getKey(),
+            'name' => 'Alem Berhanu',
+            'phone' => '+251922334455',
+            'authorized_pickup' => 1,
+        ]);
+    }
+
 }
