@@ -32,7 +32,7 @@ return [
             'reports.view', 'reports.export',
             'parent_services.view', 'parent_services.process',
             'admissions.view', 'admissions.create', 'admissions.edit', 'admissions.delete', 'admissions.approve', 'admissions.enroll', 'admissions.verify', 'admissions.capacity',
-            'hr.view', 'hr.create', 'hr.edit', 'hr.delete', 'hr.leave.approve', 'hr.payroll', 'hr.reports',
+            'hr.view', 'hr.create', 'hr.edit', 'hr.delete', 'hr.leave.approve', 'hr.reports',
         ],
 
         'school_admin' => [
@@ -52,7 +52,7 @@ return [
             'settings.view',
             'parent_services.view', 'parent_services.process',
             'admissions.view', 'admissions.create', 'admissions.edit', 'admissions.approve', 'admissions.enroll', 'admissions.verify', 'admissions.capacity',
-            'hr.view', 'hr.create', 'hr.edit', 'hr.delete', 'hr.payroll',
+            'hr.view', 'hr.create', 'hr.edit', 'hr.delete',
         ],
 
         'principal' => [
@@ -116,7 +116,7 @@ return [
             'approvals.view', 'approvals.create',
             'notifications.view',
             'reports.view',
-            'hr.view', 'hr.create', 'hr.edit', 'hr.delete', 'hr.leave.approve', 'hr.payroll', 'hr.reports',
+            'hr.view', 'hr.create', 'hr.edit', 'hr.delete', 'hr.leave.approve', 'hr.reports',
         ],
 
         'reception' => [
