@@ -444,7 +444,7 @@ class StudentInformationSystemTest extends TestCase
 
         $response->assertOk()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8')
-            ->assertStreamedContent($student->student_number);
+            ;\n\n        $this->assertStringContainsString(\n            $student->student_number,\n            $response->streamedContent()\n        );
 
         $this->assertStringContainsString(
             'edusphere-students-',
