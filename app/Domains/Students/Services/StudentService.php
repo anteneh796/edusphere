@@ -92,7 +92,8 @@ class StudentService
             $year = $this->currentYear();
             $roll = $this->nextRollNumber($class, $year);
             $guardianData = $data['guardian'] ?? null;
-            unset($data['guardian']);
+            $emergencyData = $data['emergency_contact'] ?? null;
+            unset($data['guardian'], $data['emergency_contact']);
 
             $photo = $data['photo'] ?? null;
             unset($data['photo']);
@@ -109,6 +110,9 @@ class StudentService
 
             $this->createGuardian($guardianData, $student);
             $this->createEnrollment($student, $class, $data['enrollment_date'] ?? now()->toDateString(), $year, $roll);
+            if ($emergencyData && ! empty(array_filter($emergencyData))) {
+                $this->addEmergencyContact($student, $emergencyData, auth()->id());
+            }
 
             $this->logTimeline(
                 $student,
