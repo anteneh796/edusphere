@@ -443,8 +443,12 @@ class StudentInformationSystemTest extends TestCase
             ->get(route('students.export', ['class_room_id' => $this->class5A->getKey()]));
 
         $response->assertOk()
-            ->assertHeader('content-type', 'text/csv; charset=UTF-8')
-            ;\n\n        $this->assertStringContainsString(\n            $student->student_number,\n            $response->streamedContent()\n        );
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+
+        $this->assertStringContainsString(
+            $student->student_number,
+            $response->streamedContent()
+        );
 
         $this->assertStringContainsString(
             'edusphere-students-',
