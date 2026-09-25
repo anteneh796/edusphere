@@ -35,7 +35,7 @@ class UpdateStudentRequest extends FormRequest
             'class_room_id' => ['required', 'exists:class_rooms,id'],
             'guardian.first_name' => ['nullable', 'string', 'max:100'],
             'guardian.last_name' => ['nullable', 'string', 'max:100'],
-            'guardian.relationship' => ['nullable', 'in:father,mother,guardian,sibling'],
+            'guardian.relationship' => ['nullable', 'in:father,mother,grandparent,sibling,other'],
             'guardian.phone' => ['nullable', 'string', 'max:20'],
             'guardian.email' => ['nullable', 'email', 'max:150'],
             'guardian.occupation' => ['nullable', 'string', 'max:100'],
