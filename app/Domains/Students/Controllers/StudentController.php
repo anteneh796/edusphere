@@ -24,6 +24,7 @@ use App\Support\Enums\StudentStatus;
 use App\Support\Enums\StudentTimelineType;
 use App\Support\Enums\StudentTransferType;
 use Illuminate\Http\RedirectResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -32,6 +33,30 @@ use Illuminate\View\View;
 class StudentController extends Controller
 {
     public function __construct(private readonly StudentService $studentService) {}
+
+    public function dashboard(): View
+    {
+        $this->authorize('viewAny', Student::class);
+
+        $year = $this->studentService->currentYear();
+        $currentStatuses = [StudentStatus::Active->value, StudentStatus::New->value];
+        $totalStudents = Student::where('academic_year_id', $year->getKey())->whereIn('status', $currentStatuses)->count();
+        $newAdmissions = Student::where('academic_year_id', $year->getKey())
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->count();
+        $transfers = StudentTransfer::whereHas('student', fn ($q) => $q->where('academic_year_id', $year->getKey()))
+            ->where('transfer_date', '>=', $year->start_date)
+            ->count();
+        $grade8Candidates = Student::where('academic_year_id', $year->getKey())
+            ->whereIn('status', $currentStatuses)
+            ->whereHas('gradeLevel', fn ($q) => $q->where('code', '8')->orWhere('name', 'Grade 8'))
+            ->count();
+        $byGrade = GradeLevel::ordered()->withCount(['students as current_students_count' => function ($query) use ($year, $currentStatuses) {
+            $query->where('academic_year_id', $year->getKey())->whereIn('status', $currentStatuses);
+        }])->get();
+
+        return view('students.dashboard', compact('year', 'totalStudents', 'newAdmissions', 'transfers', 'grade8Candidates', 'byGrade'));
+    }
 
     public function index(Request $request): View
     {
@@ -46,6 +71,39 @@ class StudentController extends Controller
         $statusOptions = StudentStatus::cases();
 
         return view('students.index', compact('students', 'gradeLevels', 'classRooms', 'academicYears', 'statusOptions'));
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $this->authorize('export', Student::class);
+
+        $filters = $request->only(['q', 'status', 'gender', 'grade_level_id', 'class_room_id', 'academic_year_id', 'transfer']);
+        $query = Student::withTrashed()->with(['gradeLevel', 'classRoom', 'academicYear', 'primaryGuardian'])
+            ->search($filters['q'] ?? null)
+            ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
+            ->when($filters['gender'] ?? null, fn ($q, $v) => $q->where('gender', $v))
+            ->when($filters['grade_level_id'] ?? null, fn ($q, $v) => $q->where('grade_level_id', $v))
+            ->when($filters['class_room_id'] ?? null, fn ($q, $v) => $q->where('class_room_id', $v))
+            ->when($filters['academic_year_id'] ?? null, fn ($q, $v) => $q->where('academic_year_id', $v))
+            ->when(($filters['transfer'] ?? null) === '1', fn ($q) => $q->whereIn('status', [StudentStatus::Transferred->value, StudentStatus::Withdrawn->value]))
+            ->orderBy('last_name')->orderBy('first_name');
+
+        $filename = 'edusphere-students-'.now()->format('Y-m-d_His').'.csv';
+        return response()->streamDownload(function () use ($query) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Student Number', 'First Name', 'Other Names', 'Last Name', 'Gender', 'Date of Birth', 'Grade', 'Class', 'Parent', 'Parent Phone', 'Status', 'Academic Year']);
+            $query->chunk(500, function ($students) use ($out) {
+                foreach ($students as $student) {
+                    fputcsv($out, [
+                        $student->student_number, $student->first_name, $student->other_names, $student->last_name,
+                        $student->gender, optional($student->date_of_birth)->format('Y-m-d'), $student->gradeLevel?->name,
+                        $student->classRoom?->name, $student->primaryGuardian?->full_name, $student->primaryGuardian?->phone,
+                        $student->statusLabel(), $student->academicYear?->name,
+                    ]);
+                }
+            });
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function create(): View
