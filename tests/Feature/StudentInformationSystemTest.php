@@ -444,7 +444,7 @@ class StudentInformationSystemTest extends TestCase
             ->assertOk()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8')
             ->assertHeader('content-disposition', fn ($value) => str_contains($value, 'edusphere-students-'))
-            ->assertStreamedContentContains($student->student_number);
+            ->assertStreamedContent($student->student_number);
     }
 
     public function test_registration_can_create_optional_emergency_contact(): void
