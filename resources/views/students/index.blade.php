@@ -1,13 +1,19 @@
 <x-layouts.app :title="__('Students')">
     <x-breadcrumb :items="[['label' => __('Students')]]" />
 
-    <x-page-header :title="__('Students')" :description="__('Register and manage KG-12 student records.')">
-        @can('create', \App\Domains\Students\Models\Student::class)
-            <a href="{{ route('students.create') }}" class="btn btn-primary">
+    <x-page-header :title="__('Students')" :description="__('Manage the complete KG through Grade 8 student record and enrollment lifecycle.')">
+        <div class="flex gap-1 flex-wrap">
+            <a href="{{ route('students.dashboard') }}" class="btn btn-secondary"><x-icon name="dashboard" class="icon-sm" /> {{ __('Dashboard') }}</a>
+            @can('export', \App\Domains\Students\Models\Student::class)
+                <a href="{{ route('students.export', request()->query()) }}" class="btn btn-secondary"><x-icon name="download" class="icon-sm" /> {{ __('Export CSV') }}</a>
+            @endcan
+            @can('create', \App\Domains\Students\Models\Student::class)
+                <a href="{{ route('students.create') }}" class="btn btn-primary">
                 <x-icon name="user-plus" class="icon-sm" />
                 {{ __('Register student') }}
-            </a>
-        @endcan
+                </a>
+            @endcan
+        </div>
     </x-page-header>
 
     <x-card>
