@@ -154,7 +154,7 @@ class SystemIntegrityTest extends TestCase
             ->filter()
             ->values();
 
-        foreach (['finance', 'hostel', 'library', 'inventory', 'guardian'] as $removedModule) {
+        foreach (['finance', 'payroll', 'hostel', 'library', 'inventory', 'guardian'] as $removedModule) {
             $this->assertFalse(
                 $routeNames->contains(fn (string $name) => str_contains(strtolower($name), $removedModule)),
                 "Removed module [{$removedModule}] must not have registered routes."
