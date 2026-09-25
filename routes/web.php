@@ -47,7 +47,6 @@ use App\Domains\HumanResources\Controllers\HrController;
 use App\Domains\HumanResources\Controllers\LeaveRequestController;
 use App\Domains\HumanResources\Controllers\LeaveTypeController;
 use App\Domains\HumanResources\Controllers\OfficialLetterController;
-use App\Domains\HumanResources\Controllers\PayrollController;
 use App\Domains\HumanResources\Controllers\PerformanceReviewController;
 use App\Domains\HumanResources\Controllers\PositionController;
 use App\Domains\HumanResources\Controllers\RecruitmentCandidateController;
