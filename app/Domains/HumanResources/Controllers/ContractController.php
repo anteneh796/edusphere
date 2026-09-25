@@ -19,7 +19,7 @@ class ContractController extends Controller
 {
     public function index(Request $request): View
     {
-        $this->requirePermission('hr.payroll');
+        $this->requirePermission('hr.view');
 
         $contracts = EmploymentContract::query()
             ->with(['employee:id,full_name,employee_id', 'position:id,name', 'department:id,name'])
@@ -34,7 +34,7 @@ class ContractController extends Controller
 
     public function create(): View
     {
-        $this->requirePermission('hr.payroll');
+        $this->requirePermission('hr.view');
 
         $employees = $this->activeEmployees();
 
@@ -43,7 +43,7 @@ class ContractController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $this->requirePermission('hr.payroll');
+        $this->requirePermission('hr.view');
 
         $contract = EmploymentContract::create($this->validated($request));
 
@@ -56,7 +56,7 @@ class ContractController extends Controller
 
     public function show(EmploymentContract $contract): View
     {
-        $this->requirePermission('hr.payroll');
+        $this->requirePermission('hr.view');
 
         $contract->load(['employee.department', 'employee.position', 'position', 'department', 'employee.contracts']);
 
@@ -65,7 +65,7 @@ class ContractController extends Controller
 
     public function edit(EmploymentContract $contract): View
     {
-        $this->requirePermission('hr.payroll');
+        $this->requirePermission('hr.view');
 
         $employees = $this->activeEmployees();
 
@@ -74,7 +74,7 @@ class ContractController extends Controller
 
     public function update(Request $request, EmploymentContract $contract): RedirectResponse
     {
-        $this->requirePermission('hr.payroll');
+        $this->requirePermission('hr.view');
 
         $contract->update($this->validated($request, $contract));
 
@@ -87,7 +87,7 @@ class ContractController extends Controller
 
     public function renew(Request $request, EmploymentContract $contract): RedirectResponse
     {
-        $this->requirePermission('hr.payroll');
+        $this->requirePermission('hr.view');
 
         $validated = $request->validate([
             'renewal_status' => ['required', Rule::enum(ContractRenewalStatus::class)],
