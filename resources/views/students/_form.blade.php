@@ -6,8 +6,9 @@
     $relationshipOptions = [
         'father' => 'Father',
         'mother' => 'Mother',
-        'guardian' => 'Guardian',
+        'grandparent' => 'Grandparent',
         'sibling' => 'Sibling',
+        'other' => 'Other',
     ];
 @endphp
 
