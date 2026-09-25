@@ -34,6 +34,12 @@ class StoreStudentRequest extends FormRequest
             'guardian.phone' => ['nullable', 'string', 'max:20'],
             'guardian.email' => ['nullable', 'email', 'max:150'],
             'guardian.occupation' => ['nullable', 'string', 'max:100'],
+            'emergency_contact.name' => ['nullable', 'string', 'max:100'],
+            'emergency_contact.relationship' => ['nullable', 'string', 'max:30'],
+            'emergency_contact.phone' => ['nullable', 'string', 'max:30'],
+            'emergency_contact.priority' => ['nullable', 'integer', 'min:1', 'max:99'],
+            'emergency_contact.authorized_pickup' => ['nullable', 'boolean'],
+            'emergency_contact.notes' => ['nullable', 'string', 'max:255'],
         ];
     }
 }
