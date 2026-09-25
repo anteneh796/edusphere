@@ -24,7 +24,8 @@ class Navigation
             [
                 'title' => __('Academics'),
                 'items' => [
-                    ['label' => __('Students'), 'route' => 'students.index', 'icon' => 'graduation', 'enabled' => true, 'permissions' => ['students.view']],                    ['label' => __('Class Roster'), 'route' => 'students.roster', 'icon' => 'list', 'enabled' => true, 'permissions' => ['students.view']],
+                    ['label' => __('Students'), 'route' => 'students.dashboard', 'icon' => 'graduation', 'enabled' => true, 'permissions' => ['students.view']],
+                    ['label' => __('Student Records'), 'route' => 'students.index', 'icon' => 'users', 'enabled' => true, 'permissions' => ['students.view']],                    ['label' => __('Class Roster'), 'route' => 'students.roster', 'icon' => 'list', 'enabled' => true, 'permissions' => ['students.view']],
                     ['label' => __('Promotions'), 'route' => 'students.promote', 'icon' => 'trending-up', 'enabled' => true, 'permissions' => ['students.promote']],
                     ['label' => __('Classes & Subjects'), 'route' => 'academics.index', 'icon' => 'book-open', 'enabled' => true, 'permissions' => ['academics.view']],
                     ['label' => __('Attendance'), 'route' => 'attendance.index', 'icon' => 'clipboard-check', 'enabled' => true, 'permissions' => ['attendance.view']],
