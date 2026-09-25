@@ -98,9 +98,9 @@
                     <div class="text-xs text-muted">{{ $student->primaryGuardian?->phone ?? $student->primaryGuardian?->email ?? __('No contact') }}</div>
                 </div>
                 <div class="stat-cell">
-                    <div class="text-xs text-muted">{{ __('Outstanding balance') }}</div>
-                    <div class="stat-value">{{ $outstandingBalance ?? '—' }}</div>
-                    <div class="text-xs text-muted">{{ __('Read-only · from Finance') }}</div>
+                    <div class="text-xs text-muted">{{ __('Documents') }}</div>
+                    <div class="stat-value">{{ number_format($student->documents->count()) }}</div>
+                    <div class="text-xs text-muted">{{ __('Files on record') }}</div>
                 </div>
             </div>
         </x-card>
