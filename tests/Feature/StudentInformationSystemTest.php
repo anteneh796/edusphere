@@ -439,12 +439,17 @@ class StudentInformationSystemTest extends TestCase
         $registrar = $this->userWithRole(RoleName::Registrar->value);
         $student = $this->makeStudent($this->class5A);
 
-        $this->actingAs($registrar)
-            ->get(route('students.export', ['class_room_id' => $this->class5A->getKey()]))
-            ->assertOk()
+        $response = $this->actingAs($registrar)
+            ->get(route('students.export', ['class_room_id' => $this->class5A->getKey()]));
+
+        $response->assertOk()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8')
-            ->assertHeader('content-disposition', fn ($value) => str_contains($value, 'edusphere-students-'))
             ->assertStreamedContent($student->student_number);
+
+        $this->assertStringContainsString(
+            'edusphere-students-',
+            (string) $response->headers->get('content-disposition')
+        );
     }
 
     public function test_registration_can_create_optional_emergency_contact(): void
