@@ -94,7 +94,7 @@ class HrDashboardService
                     $birthday->addYear();
                 }
 
-                $employee->setRelation('daysUntilBirthday', (int) $today->startOfDay()->diffInDays($birthday, false) + 1);
+                $employee->setAttribute('days_until_birthday', (int) $today->startOfDay()->diffInDays($birthday, false) + 1);
 
                 return $employee;
             })
